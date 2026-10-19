@@ -220,6 +220,5 @@ tests/
 
 ## License
 
-Copyright (c) 2026 aenealabs. All rights reserved. No license is granted to use, copy,
-modify, or distribute this code. Third-party components keep their own licenses; see
+Released under the [MIT License](LICENSE). Third-party components keep their own licenses; see
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
