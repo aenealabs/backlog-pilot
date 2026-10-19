@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+  <h1>Intakes</h1>
+  <span class="muted">Each approved request, with its assumptions and open questions.</span>
+</div>
+<div class="card">
+  {% if rows %}
+  <ul class="list">
+    {% for r in rows %}{% set i = r.intake %}
+    <li class="list-item clickable" onclick="location.href='/intakes/{{ i.id }}'">
+      {% if r.pending %}<span class="status-bar" style="background: var(--warning)"></span>{% endif %}
+      <span class="avatar"><span class="material-symbols-outlined">forum</span></span>
+      <div class="text">
+        <a class="primary" href="/intakes/{{ i.id }}" style="color:inherit;text-decoration:none">{{ i.summary }}</a>
+        <div class="secondary">{{ i.created_by }} · {{ i.created_at.strftime('%Y-%m-%d %H:%M') }} UTC ·
+          {{ i.draft_count | plural('draft') }}</div>
+      </div>
+      <span class="chip outlined">{{ r.assumptions | plural('assumption') }}</span>
+      <span class="chip outlined">{{ r.open_questions }} open {{ 'question' if r.open_questions == 1 else 'questions' }}</span>
+      {% if r.pending %}<span class="chip warning">{{ r.pending | plural('change') }} to review</span>{% endif %}
+      <span class="mono muted">{{ i.key }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="empty">
+    <span class="material-symbols-outlined">forum</span>
+    <h3>No intakes yet</h3>
+    <p>Approve a draft from <a href="/">New intake</a> and it appears here.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

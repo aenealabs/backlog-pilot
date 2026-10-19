@@ -1,0 +1,45 @@
+name: Record demo responses
+
+# Runs the demo scenarios against the live model and uploads the recorded responses.
+# Authenticates with workload identity federation: no API key is stored in GitHub.
+# The federation rule only accepts runs on refs/heads/main.
+on:
+  workflow_dispatch:
+    inputs:
+      scenarios:
+        description: "Scenario ids to record, space separated (blank = all)"
+        required: false
+        default: ""
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_FEDERATION_RULE_ID: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID }}
+      ANTHROPIC_ORGANIZATION_ID: ${{ vars.ANTHROPIC_ORGANIZATION_ID }}
+      ANTHROPIC_SERVICE_ACCOUNT_ID: ${{ vars.ANTHROPIC_SERVICE_ACCOUNT_ID }}
+      ANTHROPIC_WORKSPACE_ID: ${{ vars.ANTHROPIC_WORKSPACE_ID }}
+      ANTHROPIC_IDENTITY_TOKEN_FILE: /tmp/gha-jwt  # runner context is not available in job-level env
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e .
+      - name: Fetch GitHub OIDC token
+        run: |
+          curl -sSf -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://api.anthropic.com" \
+            | jq -r .value > "$ANTHROPIC_IDENTITY_TOKEN_FILE"
+      - name: Record scenarios
+        env:
+          SCENARIOS: ${{ inputs.scenarios }}
+        run: python -m backlog_pilot.record_demos $SCENARIOS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: demo-replays
+          path: data/replays/

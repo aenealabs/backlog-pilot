@@ -1,0 +1,47 @@
+{
+  "_note": "Starter persona library for Product Engineering & R&D systems. Fictional; edit in the app.",
+  "personas": [
+    {
+      "name": "design engineer",
+      "description": "Creates and revises parts, assemblies, and drawings in CAD and releases them through PLM.",
+      "goals": ["Reuse existing parts instead of creating new ones", "Get changes released without rework"],
+      "pain_points": ["Cannot see where a change is stuck", "Slow, hard-to-search part libraries"]
+    },
+    {
+      "name": "eco approver",
+      "description": "Reviews and approves engineering change orders for technical, cost, and compliance impact.",
+      "goals": ["Approve the right changes quickly", "See complete impact information up front"],
+      "pain_points": ["Notification overload", "Incomplete ECO submissions"]
+    },
+    {
+      "name": "manufacturing engineer",
+      "description": "Turns released engineering BOMs into manufacturing BOMs and routings at the plant.",
+      "goals": ["Build to the current revision", "Receive BOM changes the same day they release"],
+      "pain_points": ["Lag between PLM release and SAP", "Unclear effectivity dates"]
+    },
+    {
+      "name": "plm administrator",
+      "description": "Configures and supports the PLM platform, integrations, workflows, and user access.",
+      "goals": ["Keep the platform stable and secure", "Detect and fix integration failures fast"],
+      "pain_points": ["Silent integration errors", "Manual access reviews"]
+    },
+    {
+      "name": "engineering data steward",
+      "description": "Owns the quality of part, document, and classification master data for a business unit.",
+      "goals": ["Keep master data complete and consistent", "Remove duplicate parts safely"],
+      "pain_points": ["Three legacy part masters", "No tooling to flag or merge duplicates"]
+    },
+    {
+      "name": "engineering manager",
+      "description": "Leads an engineering team and is accountable for delivery, cycle time, and cost.",
+      "goals": ["See bottlenecks across the portfolio", "Hit cycle-time targets"],
+      "pain_points": ["Status lives in email", "No trend data on change cycle time"]
+    },
+    {
+      "name": "export compliance officer",
+      "description": "Ensures ITAR and EAR controlled technical data is classified and only seen by authorized people.",
+      "goals": ["Every controlled item classified", "Access granted only to authorized users"],
+      "pain_points": ["Classification missing on legacy data", "Manual access attestations"]
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "_note": "Suggested audit questions. Their search plans are recorded for offline demos; plans hold no event data, so they work against any log. Avoid relative dates here: a recorded 'last week' would freeze to the recording date.",
+  "questions": [
+    "Who changed WSJF scores, and what reasons did they give?",
+    "Show every roadmap and capacity decision and who made it.",
+    "Which assumptions were edited or removed, and by whom?",
+    "What did Riley Adams do?"
+  ]
+}

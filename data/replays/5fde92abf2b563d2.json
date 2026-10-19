@@ -1,0 +1,295 @@
+{
+  "input": "We still run a legacy CAD data vault for one business unit. It is on unsupported software, it failed its last cybersecurity review, and the vendor contract ends in 11 months. About 400 engineers use it daily and there are roughly 2 million files, including revision history we must keep for regulatory reasons. We want to move everything into the enterprise PLM platform without stopping engineering work, and we cannot lose revision history or file relationships between assemblies and drawings.",
+  "decomposition": {
+    "summary": "Migrate a business unit's legacy CAD data vault (about 2 million files, 400 daily engineers) into the enterprise PLM platform within 11 months, before the vendor contract ends, keeping full revision history and assembly-drawing relationships without stopping engineering work. The legacy vault runs on unsupported software that failed its cybersecurity review, so its risk must be contained and it must be retired.",
+    "epics": [
+      {
+        "title": "Full-fidelity migration of legacy CAD vault data into enterprise PLM",
+        "description": "Profile, map, and migrate all legacy vault content into enterprise PLM. Preserve every revision and every assembly-drawing relationship, with evidence that the migrated data is complete and can stand up to regulatory scrutiny.",
+        "business_outcome": "100% of in-scope files and revisions migrated, with zero unreconciled revision or relationship discrepancies at sign-off.",
+        "features": [
+          {
+            "title": "Legacy vault profiling, mapping, and data readiness",
+            "description": "Inventory the vault content, map it to the PLM data model, and resolve data quality and export-control classification issues before bulk loads begin.",
+            "stories": [
+              {
+                "title": "Profile legacy vault content",
+                "as_a": "engineering data steward",
+                "i_want": "an automated inventory of all files, revisions, file types, and relationships in the legacy vault, with data quality issues flagged",
+                "so_that": "migration scope, volume, and cleansing effort are known before any load starts",
+                "acceptance_criteria": [
+                  "Given read access to the legacy vault, When the profiling job runs, Then a report lists file count, revision count, and relationship count, broken down by file type.",
+                  "Given files with missing references, duplicate part numbers, or corrupt content, When profiling completes, Then each issue is listed with its file identifier and issue category.",
+                  "Given the profiling report, When the data steward reviews it, Then the totals reconcile with the vault's own database counts within an agreed tolerance."
+                ],
+                "source_quotes": [
+                  "About 400 engineers use it daily and there are roughly 2 million files, including revision history we must keep for regulatory reasons."
+                ],
+                "nfr_categories": [
+                  "data_governance"
+                ]
+              },
+              {
+                "title": "Map legacy metadata to the PLM data model",
+                "as_a": "engineering data steward",
+                "i_want": "an approved mapping of legacy attributes, lifecycle states, and revision schemes to PLM types and attributes",
+                "so_that": "migrated data is usable and consistent with enterprise standards",
+                "acceptance_criteria": [
+                  "Given the legacy attribute list, When the mapping is complete, Then every legacy attribute is either mapped to a PLM attribute or explicitly marked as not migrated, with a reason.",
+                  "Given legacy lifecycle states and revision labels, When a sample of 500 objects is transformed, Then each object receives a valid PLM state and revision without any manual edit.",
+                  "Given the mapping specification, When it is approved, Then the approver and the approval date are recorded in the specification's version history."
+                ],
+                "source_quotes": [
+                  "We want to move everything into the enterprise PLM platform"
+                ],
+                "nfr_categories": [
+                  "data_governance"
+                ]
+              },
+              {
+                "title": "Screen migrated data for export-controlled content",
+                "as_a": "export compliance officer",
+                "i_want": "legacy files screened and tagged with an ITAR/EAR classification before they load into PLM",
+                "so_that": "controlled technical data is only visible to authorized people after migration",
+                "acceptance_criteria": [
+                  "Given the profiled inventory, When screening rules run, Then each file is tagged as controlled, not controlled, or needing review.",
+                  "Given a file tagged as needing review, When it reaches a migration wave, Then the load is blocked until the export compliance officer records a classification.",
+                  "Given a file tagged as controlled, When it is loaded into PLM, Then the matching access policy is applied and a user without authorization cannot open it."
+                ],
+                "source_quotes": [],
+                "nfr_categories": [
+                  "export_control",
+                  "security"
+                ]
+              }
+            ],
+            "wsjf": {
+              "business_value": 8,
+              "time_criticality": 13,
+              "risk_reduction": 13,
+              "job_size": 8,
+              "rationale": "This is a prerequisite for every load, and the 11-month deadline makes it urgent. Clean mapping and export screening remove the main data and compliance risks, at moderate effort."
+            }
+          },
+          {
+            "title": "Bulk migration with revision history and relationships preserved",
+            "description": "Run repeatable migration loads that carry over all revisions and assembly-drawing links. Reconcile every load and keep an audit trail.",
+            "stories": [
+              {
+                "title": "Migrate full revision history",
+                "as_a": "design engineer",
+                "i_want": "every revision of my parts, assemblies, and drawings available in PLM in the original sequence, with original dates and authors",
+                "so_that": "I can trace design evolution and we meet regulatory retention obligations",
+                "acceptance_criteria": [
+                  "Given an object with N revisions in the legacy vault, When it is migrated, Then PLM shows N revisions with the same labels, order, creation dates, and authors.",
+                  "Given any migrated revision, When a design engineer opens it in PLM, Then the file content checksum matches the legacy file.",
+                  "Given a revision that failed to migrate, When the load completes, Then it appears in the exception log and the parent object is not marked as complete."
+                ],
+                "source_quotes": [
+                  "we cannot lose revision history or file relationships between assemblies and drawings",
+                  "revision history we must keep for regulatory reasons"
+                ],
+                "nfr_categories": [
+                  "data_governance",
+                  "auditability"
+                ]
+              },
+              {
+                "title": "Preserve assembly and drawing relationships",
+                "as_a": "design engineer",
+                "i_want": "the assembly structures and drawing-to-model links rebuilt in PLM exactly as they were in the legacy vault",
+                "so_that": "assemblies open complete and drawings reference the correct model revision",
+                "acceptance_criteria": [
+                  "Given a migrated top-level assembly, When it is opened through the PLM CAD connector, Then all components resolve with no missing references.",
+                  "Given a drawing linked to a specific model revision in the legacy vault, When it is migrated, Then PLM links the drawing to the same model revision.",
+                  "Given the relationship count for a migration wave, When the load completes, Then the PLM relationship count equals the legacy count, or each difference is logged."
+                ],
+                "source_quotes": [
+                  "we cannot lose revision history or file relationships between assemblies and drawings"
+                ],
+                "nfr_categories": [
+                  "data_governance"
+                ]
+              },
+              {
+                "title": "Reconcile each migration wave with audit evidence",
+                "as_a": "engineering data steward",
+                "i_want": "an automated reconciliation report for each wave, with the sign-off retained as a record",
+                "so_that": "we can prove to auditors and regulators that nothing was lost",
+                "acceptance_criteria": [
+                  "Given a completed wave, When reconciliation runs, Then the report compares file, revision, relationship, and checksum counts between the legacy vault and PLM.",
+                  "Given any discrepancy, When the report is generated, Then the wave cannot be marked accepted until every discrepancy is resolved or formally waived.",
+                  "Given an accepted wave, When an auditor requests evidence, Then the report, the sign-off identity, and the timestamp can be retrieved and cannot be edited."
+                ],
+                "source_quotes": [],
+                "nfr_categories": [
+                  "auditability",
+                  "data_governance"
+                ]
+              }
+            ],
+            "wsjf": {
+              "business_value": 20,
+              "time_criticality": 13,
+              "risk_reduction": 13,
+              "job_size": 13,
+              "rationale": "This is the core outcome the stakeholder asked for, and it carries a regulatory obligation on revision history. It is the largest technical effort, because of about 2 million files and their relationship reconstruction."
+            }
+          }
+        ]
+      },
+      {
+        "title": "Uninterrupted cutover and secure retirement of the legacy vault",
+        "description": "Move about 400 engineers onto PLM in waves without stopping engineering work. Contain the cybersecurity risk of the legacy vault until it is retired before the vendor contract ends.",
+        "business_outcome": "All users working in PLM and the legacy vault decommissioned before the vendor contract ends in 11 months, with no unplanned engineering downtime.",
+        "features": [
+          {
+            "title": "Phased cutover with business continuity",
+            "description": "Run wave-based cutover with delta synchronization, short controlled freezes, and user readiness so that engineering work continues throughout.",
+            "stories": [
+              {
+                "title": "Plan migration waves by team and project",
+                "as_a": "engineering manager",
+                "i_want": "a cutover wave plan agreed with my team, including freeze windows and the go-live date",
+                "so_that": "delivery commitments are protected while my team moves to PLM",
+                "acceptance_criteria": [
+                  "Given the profiled inventory, When the wave plan is published, Then every project and every user is assigned to exactly one wave with a go-live date.",
+                  "Given a wave, When its freeze window is scheduled, Then the affected engineering managers have approved it at least two weeks in advance.",
+                  "Given the full wave plan, When it is reviewed, Then the final wave completes before the vendor contract end date with at least four weeks of contingency."
+                ],
+                "source_quotes": [
+                  "without stopping engineering work",
+                  "the vendor contract ends in 11 months"
+                ],
+                "nfr_categories": []
+              },
+              {
+                "title": "Synchronize changes made during migration",
+                "as_a": "plm administrator",
+                "i_want": "delta loads that capture files checked in to the legacy vault after the bulk load of each wave",
+                "so_that": "engineers can keep working until cutover without losing changes",
+                "acceptance_criteria": [
+                  "Given a wave has been bulk loaded, When engineers check in new revisions to the legacy vault, Then the next delta load migrates those revisions to PLM.",
+                  "Given the cutover freeze begins, When the final delta load completes, Then reconciliation shows zero un-migrated changes for that wave.",
+                  "Given a delta load fails, When the job ends, Then the PLM administrator is alerted and the job can be rerun without creating duplicate revisions."
+                ],
+                "source_quotes": [
+                  "We want to move everything into the enterprise PLM platform without stopping engineering work"
+                ],
+                "nfr_categories": [
+                  "integration_reliability",
+                  "data_governance"
+                ]
+              },
+              {
+                "title": "Prepare engineers to work in PLM at go-live",
+                "as_a": "design engineer",
+                "i_want": "the PLM CAD connector installed, my access provisioned, and short role-based training before my wave goes live",
+                "so_that": "I can check out, edit, and release designs in PLM on day one",
+                "acceptance_criteria": [
+                  "Given a user in an upcoming wave, When go-live arrives, Then the user's PLM account, roles, and CAD connector are provisioned and verified.",
+                  "Given a trained design engineer, When they perform a check-out, edit, and check-in on a migrated assembly, Then the task completes without support intervention.",
+                  "Given the wave go-live, When the first week ends, Then support tickets are tracked and reported to the engineering manager."
+                ],
+                "source_quotes": [
+                  "About 400 engineers use it daily"
+                ],
+                "nfr_categories": [
+                  "security"
+                ]
+              }
+            ],
+            "wsjf": {
+              "business_value": 13,
+              "time_criticality": 13,
+              "risk_reduction": 8,
+              "job_size": 8,
+              "rationale": "Business continuity for 400 daily users is an explicit constraint, and the contract deadline drives urgency. Effort is moderate because it reuses the migration tooling."
+            }
+          },
+          {
+            "title": "Legacy vault risk containment and decommissioning",
+            "description": "Reduce the cybersecurity exposure of the unsupported vault during migration. Then retire it, keeping retained records accessible in PLM.",
+            "stories": [
+              {
+                "title": "Harden and isolate the legacy vault during migration",
+                "as_a": "plm administrator",
+                "i_want": "compensating controls on the legacy vault: network segmentation, restricted accounts, and access logging",
+                "so_that": "the open cybersecurity findings are contained until the vault is retired",
+                "acceptance_criteria": [
+                  "Given the findings of the last cybersecurity review, When the compensating controls are implemented, Then each finding has a documented mitigation or accepted risk owner.",
+                  "Given the segmented network, When a host outside the approved list tries to connect to the vault, Then the connection is blocked and logged.",
+                  "Given the vault access logs, When the security team requests them, Then they are retained centrally for the duration of the migration."
+                ],
+                "source_quotes": [
+                  "It is on unsupported software, it failed its last cybersecurity review"
+                ],
+                "nfr_categories": [
+                  "security",
+                  "auditability"
+                ]
+              },
+              {
+                "title": "Switch the legacy vault to read-only per completed wave",
+                "as_a": "plm administrator",
+                "i_want": "to set migrated content in the legacy vault to read-only once its wave is accepted",
+                "so_that": "no one creates divergent changes after cutover",
+                "acceptance_criteria": [
+                  "Given an accepted wave, When the read-only switch is applied, Then users in that wave can no longer check in to the legacy vault.",
+                  "Given a check-in attempt on read-only content, When it is blocked, Then the user sees a message directing them to PLM."
+                ],
+                "source_quotes": [],
+                "nfr_categories": [
+                  "data_governance"
+                ]
+              },
+              {
+                "title": "Decommission the legacy vault before contract end",
+                "as_a": "engineering manager",
+                "i_want": "the legacy vault shut down and its servers sanitized once all waves are accepted",
+                "so_that": "we stop paying for and exposing unsupported software before the vendor contract ends",
+                "acceptance_criteria": [
+                  "Given all waves are accepted, When decommissioning is executed, Then the application is shut down and its storage is sanitized according to the corporate data destruction standard.",
+                  "Given decommissioning completes, When the date is checked, Then it falls before the vendor contract end date.",
+                  "Given regulatory revision history, When an auditor requests a retired record after decommissioning, Then it is retrievable from PLM."
+                ],
+                "source_quotes": [
+                  "the vendor contract ends in 11 months",
+                  "revision history we must keep for regulatory reasons"
+                ],
+                "nfr_categories": [
+                  "security",
+                  "auditability"
+                ]
+              }
+            ],
+            "wsjf": {
+              "business_value": 5,
+              "time_criticality": 8,
+              "risk_reduction": 20,
+              "job_size": 5,
+              "rationale": "The failed cybersecurity review makes this the highest risk-reduction item, and the work is relatively small. Its direct user value is lower, and most of its time pressure comes at the end of the program."
+            }
+          }
+        ]
+      }
+    ],
+    "assumptions": [
+      "The target is the enterprise 3DEXPERIENCE/Enovia platform, which already has a supported connector for the CAD tool(s) used by this business unit.",
+      "The vendor contract cannot be extended, so 11 months is a hard deadline.",
+      "SAP ERP integration and engineering BOM transfer are out of scope unless the legacy vault currently feeds ERP.",
+      "Retained records only need to be retrievable from PLM after decommissioning, not from a separate archive.",
+      "In-flight engineering changes in the legacy vault can be completed before their wave's freeze or recreated in PLM."
+    ],
+    "open_questions": [
+      "Which CAD tool(s) and file formats does the legacy vault hold, and is there a supported PLM connector for each?",
+      "Which regulations govern revision history retention, and do they impose specific evidence or validation requirements for the migration?",
+      "Does the vault contain ITAR or EAR controlled technical data, and is any of it already classified?",
+      "Should obsolete or unreferenced data be migrated, archived elsewhere, or purged?",
+      "What is the longest acceptable freeze window per team, and are there critical project milestones that waves must avoid?",
+      "Are the legacy vault's workflows, approvals, or ECO records in scope for migration, or only files and revisions?",
+      "Can the security team accept compensating controls on the legacy vault until decommissioning?"
+    ],
+    "proposed_personas": []
+  }
+}

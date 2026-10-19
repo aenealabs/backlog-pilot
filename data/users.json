@@ -1,0 +1,29 @@
+{
+  "_note": "Fictional demo users for the 'acting as' switcher. Approvers can approve drafts, score WSJF, and change the roadmap. Real sign-in (BP_AUTH=oidc) replaces this.",
+  "users": [
+    {
+      "id": "po",
+      "name": "Jordan Lee",
+      "role": "Product Owner",
+      "approver": true
+    },
+    {
+      "id": "ba",
+      "name": "Sam Patel",
+      "role": "Business Analyst",
+      "approver": false
+    },
+    {
+      "id": "eng",
+      "name": "Morgan Chen",
+      "role": "Engineering Lead",
+      "approver": true
+    },
+    {
+      "id": "stake",
+      "name": "Riley Adams",
+      "role": "Director of Engineering",
+      "approver": false
+    }
+  ]
+}

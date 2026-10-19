@@ -1,0 +1,95 @@
+{
+  "_note": "Fictional sample backlog for demos. Not real company data.",
+  "epics": [
+    {
+      "title": "Migrate engineering BOM integration to event-driven APIs",
+      "status": "In Progress",
+      "description": "Replace the nightly batch file transfer between PLM and SAP with event-driven API integration.",
+      "business_outcome": "Released BOMs reach SAP in under 15 minutes instead of next day.",
+      "features": [
+        {
+          "title": "BOM release event publisher in PLM",
+          "status": "Done",
+          "description": "Publish a release event whenever an EBOM is released."
+        },
+        {
+          "title": "SAP material and BOM upsert service",
+          "status": "In Progress",
+          "description": "Consume release events and create or update materials and BOMs in SAP.",
+          "wsjf": {
+            "business_value": 13,
+            "time_criticality": 13,
+            "risk_reduction": 5,
+            "job_size": 8,
+            "rationale": "Unblocks same-day BOM delivery; in progress, so finishing it is urgent."
+          }
+        },
+        {
+          "title": "Integration error dashboard",
+          "status": "New",
+          "description": "Show failed BOM transfers with the reason and a retry action.",
+          "wsjf": {
+            "business_value": 5,
+            "time_criticality": 3,
+            "risk_reduction": 8,
+            "job_size": 3,
+            "rationale": "Small job that cuts silent integration failures."
+          }
+        }
+      ],
+      "product": "plm-sap"
+    },
+    {
+      "title": "Engineering data governance foundation",
+      "status": "In Progress",
+      "description": "Define ownership, quality rules, and stewardship for part and document master data.",
+      "business_outcome": "Part master completeness above 95% for released parts.",
+      "features": [
+        {
+          "title": "Part classification standard",
+          "status": "Done",
+          "description": "Common classification schema across business units."
+        },
+        {
+          "title": "Data quality scorecard",
+          "status": "New",
+          "description": "Weekly completeness and validity scores by business unit.",
+          "wsjf": {
+            "business_value": 8,
+            "time_criticality": 3,
+            "risk_reduction": 5,
+            "job_size": 5,
+            "rationale": "Makes data quality visible by business unit; not time critical."
+          }
+        }
+      ],
+      "product": "data-gov"
+    },
+    {
+      "title": "PLM platform security hardening",
+      "status": "Blocked",
+      "description": "Close findings from the annual PLM cybersecurity assessment.",
+      "business_outcome": "Zero open high-severity findings on the PLM platform.",
+      "features": [
+        {
+          "title": "Single sign-on and MFA for all PLM roles",
+          "status": "Blocked",
+          "description": "Move remaining local accounts to enterprise SSO with MFA.",
+          "wsjf": {
+            "business_value": 8,
+            "time_criticality": 13,
+            "risk_reduction": 20,
+            "job_size": 8,
+            "rationale": "Open cybersecurity finding; high risk reduction, blocked on identity team."
+          }
+        },
+        {
+          "title": "Export-controlled data access review",
+          "status": "New",
+          "description": "Quarterly attestation of who can access ITAR/EAR-controlled items."
+        }
+      ],
+      "product": "plm"
+    }
+  ]
+}

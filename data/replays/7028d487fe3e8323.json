@@ -1,0 +1,363 @@
+{
+  "input": "Our supplier quality engineers find out about engineering changes too late. When we revise a drawing for a purchased part, suppliers often keep building to the old revision for weeks, and two field escapes this year were traced back to that. Today a buyer emails the supplier a PDF, and nobody confirms the supplier received it or updated their PPAP. I need suppliers to get the released drawing and change notice automatically, acknowledge it in a supplier portal, and resubmit PPAP when the change affects form, fit, or function. Supplier quality and purchasing need to see which suppliers have not acknowledged and which open purchase orders are affected. Some of these drawings are export controlled, so each supplier must only see what they are licensed to receive.",
+  "decomposition": {
+    "summary": "Supplier quality engineers and suppliers learn about revised purchased-part drawings too late, which has contributed to field escapes. The request is to send released drawings and change notices to suppliers automatically, capture acknowledgment in a supplier portal, require PPAP resubmission for form, fit, or function changes, show unacknowledged suppliers and affected open purchase orders, and limit export-controlled drawings to licensed suppliers.",
+    "epics": [
+      {
+        "title": "Close the loop with suppliers on purchased-part engineering changes",
+        "description": "Replace manual buyer emails with automated, confirmed delivery of released drawings and change notices to affected suppliers. Track acknowledgment in a supplier portal and drive PPAP resubmission when a change affects form, fit, or function.",
+        "business_outcome": "Eliminate field escapes caused by suppliers building to superseded revisions, and reduce the time from ECO release to supplier acknowledgment from weeks to a target agreed with supplier quality.",
+        "features": [
+          {
+            "title": "Automated distribution of released drawings and change notices to affected suppliers",
+            "description": "On release of a revised purchased-part drawing in PLM, identify the affected suppliers from SAP and deliver the released drawing and change notice to them automatically through the supplier portal.",
+            "stories": [
+              {
+                "title": "Auto-publish change package on ECO release",
+                "as_a": "supplier quality engineer",
+                "i_want": "the released drawing and change notice for a purchased part to be published automatically to the supplier portal when the ECO is released in PLM",
+                "so_that": "suppliers stop building to the old revision because nobody had to remember to email them",
+                "acceptance_criteria": [
+                  "Given an ECO that revises a purchased-part drawing, When the ECO reaches Released state in PLM, Then a change package containing the released drawing PDF and the change notice is created in the supplier portal within the agreed latency",
+                  "Given a change package has been published, When the supplier quality engineer opens the ECO in PLM, Then the publication status and timestamp for each supplier are visible",
+                  "Given an ECO that revises only make parts, When it is released, Then no supplier change package is created"
+                ],
+                "source_quotes": [
+                  "I need suppliers to get the released drawing and change notice automatically",
+                  "Today a buyer emails the supplier a PDF, and nobody confirms the supplier received it or updated their PPAP."
+                ],
+                "nfr_categories": []
+              },
+              {
+                "title": "Determine affected suppliers from SAP sourcing and open POs",
+                "as_a": "buyer",
+                "i_want": "the affected suppliers for a revised part to be determined from SAP source lists and open purchase orders",
+                "so_that": "every supplier currently building or quoting the part receives the change without manual lookup",
+                "acceptance_criteria": [
+                  "Given a revised purchased part with two approved sources in SAP, When the ECO is released, Then both suppliers are added as recipients of the change package",
+                  "Given a supplier with an open purchase order for the part but no source list entry, When the ECO is released, Then that supplier is still included as a recipient",
+                  "Given the recipient list has been generated, When the buyer reviews it, Then the buyer can add a missing supplier before the notification is sent, and the addition is logged"
+                ],
+                "source_quotes": [
+                  "When we revise a drawing for a purchased part, suppliers often keep building to the old revision for weeks, and two field escapes this year were traced back to that."
+                ],
+                "nfr_categories": [
+                  "integration_reliability"
+                ]
+              },
+              {
+                "title": "Monitor and retry PLM-to-portal distribution",
+                "as_a": "plm administrator",
+                "i_want": "failed change-package transfers between PLM, SAP, and the supplier portal to be retried automatically and raised as alerts",
+                "so_that": "no released change silently fails to reach a supplier",
+                "acceptance_criteria": [
+                  "Given the supplier portal is unavailable, When an ECO is released, Then the transfer is queued and retried automatically until it succeeds or the retry limit is reached",
+                  "Given the retry limit is reached, When the transfer still fails, Then an alert naming the ECO and the affected suppliers is sent to the PLM support queue",
+                  "Given a transfer that succeeds after retries, When the administrator views the integration log, Then each attempt and its outcome is recorded"
+                ],
+                "source_quotes": [],
+                "nfr_categories": [
+                  "integration_reliability",
+                  "auditability"
+                ]
+              }
+            ],
+            "wsjf": {
+              "business_value": 13,
+              "time_criticality": 13,
+              "risk_reduction": 13,
+              "job_size": 8,
+              "rationale": "This is the core fix for late notification, which has been tied to two field escapes this year, so value and urgency are high. It needs PLM, SAP, and portal integration, which makes it a sizable job."
+            }
+          },
+          {
+            "title": "Supplier acknowledgment in the supplier portal",
+            "description": "Suppliers confirm receipt of a change package in the portal. Reminders and escalation follow when they do not, and every acknowledgment leaves an auditable record.",
+            "stories": [
+              {
+                "title": "Supplier acknowledges a change package",
+                "as_a": "supplier quality contact",
+                "i_want": "to view a change package and acknowledge receipt and the planned effectivity in the supplier portal",
+                "so_that": "the manufacturer has confirmation that we will build to the new revision",
+                "acceptance_criteria": [
+                  "Given a change package addressed to my company, When I log in to the supplier portal, Then I see the package with the drawing, the change notice, and the new revision",
+                  "Given I open the package, When I select Acknowledge and enter a planned cut-in date, Then the status changes to Acknowledged and is recorded with my name and a timestamp",
+                  "Given a package not addressed to my company, When I search the portal, Then that package is not visible to me"
+                ],
+                "source_quotes": [
+                  "acknowledge it in a supplier portal"
+                ],
+                "nfr_categories": [
+                  "security"
+                ]
+              },
+              {
+                "title": "Remind and escalate unacknowledged changes",
+                "as_a": "supplier quality engineer",
+                "i_want": "automatic reminders to suppliers and an escalation to me when a change package is not acknowledged within the agreed period",
+                "so_that": "I learn about non-responsive suppliers before they ship parts at the old revision",
+                "acceptance_criteria": [
+                  "Given a change package unacknowledged for the reminder period, When the period elapses, Then the supplier contact receives a reminder notification",
+                  "Given a change package unacknowledged for the escalation period, When the period elapses, Then the responsible supplier quality engineer and buyer receive an escalation listing the supplier, part, and ECO"
+                ],
+                "source_quotes": [
+                  "nobody confirms the supplier received it"
+                ],
+                "nfr_categories": []
+              },
+              {
+                "title": "Immutable acknowledgment audit trail",
+                "as_a": "supplier quality engineer",
+                "i_want": "a tamper-evident history of publication, viewing, acknowledgment, and PPAP events for each supplier change package",
+                "so_that": "we can show customers and auditors that the supplier was informed and when",
+                "acceptance_criteria": [],
+                "source_quotes": [],
+                "nfr_categories": [
+                  "auditability"
+                ]
+              }
+            ],
+            "wsjf": {
+              "business_value": 13,
+              "time_criticality": 8,
+              "risk_reduction": 8,
+              "job_size": 5,
+              "rationale": "Confirmed receipt is the missing control in today's process, and the portal workflow is moderate in effort. Urgency is slightly lower because it depends on distribution being in place first."
+            }
+          },
+          {
+            "title": "PPAP resubmission for form, fit, or function changes",
+            "description": "Classify on the ECO whether a change affects form, fit, or function. When it does, require the supplier to resubmit PPAP through the portal and have supplier quality review it.",
+            "stories": [
+              {
+                "title": "Flag form, fit, or function impact on the ECO",
+                "as_a": "eco approver",
+                "i_want": "a mandatory form, fit, or function impact field on ECOs that affect purchased parts",
+                "so_that": "PPAP resubmission is triggered by a recorded engineering decision rather than by memory",
+                "acceptance_criteria": [
+                  "Given an ECO affecting a purchased part, When I try to approve it without completing the form, fit, or function field, Then approval is blocked with a message stating that the field is required",
+                  "Given the field is set to Yes, When the ECO is released, Then the supplier change package is marked as requiring PPAP resubmission"
+                ],
+                "source_quotes": [
+                  "resubmit PPAP when the change affects form, fit, or function"
+                ],
+                "nfr_categories": [
+                  "data_governance"
+                ]
+              },
+              {
+                "title": "Supplier resubmits PPAP in the portal",
+                "as_a": "supplier quality contact",
+                "i_want": "to upload PPAP documents against the change package in the portal",
+                "so_that": "I can complete the required requalification without email exchanges",
+                "acceptance_criteria": [
+                  "Given a change package that requires PPAP, When I acknowledge it, Then a PPAP submission task with a due date is created for my company",
+                  "Given an open PPAP task, When I upload the required elements and submit, Then the status changes to Submitted and the supplier quality engineer is notified"
+                ],
+                "source_quotes": [
+                  "resubmit PPAP when the change affects form, fit, or function"
+                ],
+                "nfr_categories": []
+              },
+              {
+                "title": "Review and disposition resubmitted PPAP",
+                "as_a": "supplier quality engineer",
+                "i_want": "to approve or reject a resubmitted PPAP with comments",
+                "so_that": "suppliers are released to ship the new revision only after requalification",
+                "acceptance_criteria": [
+                  "Given a submitted PPAP, When I approve it, Then the status changes to Approved and the supplier and buyer are notified",
+                  "Given a submitted PPAP, When I reject it with comments, Then the task returns to the supplier with my comments and a new due date"
+                ],
+                "source_quotes": [
+                  "nobody confirms the supplier received it or updated their PPAP"
+                ],
+                "nfr_categories": [
+                  "auditability"
+                ]
+              }
+            ],
+            "wsjf": {
+              "business_value": 13,
+              "time_criticality": 8,
+              "risk_reduction": 13,
+              "job_size": 8,
+              "rationale": "Requalifying suppliers after form, fit, or function changes directly prevents escapes, so risk reduction is high. It adds ECO data changes and a document workflow, which gives it a medium-to-large size."
+            }
+          }
+        ]
+      },
+      {
+        "title": "Secure, transparent supplier change compliance",
+        "description": "Give supplier quality and purchasing visibility of acknowledgment status and affected open purchase orders. Ensure export-controlled drawings reach only suppliers licensed to receive them.",
+        "business_outcome": "Allow supplier quality and purchasing to see 100% of unacknowledged changes and affected open POs, with zero export-controlled drawings released to unlicensed suppliers.",
+        "features": [
+          {
+            "title": "Supplier change status and affected PO dashboard",
+            "description": "Provide a shared view of change packages by supplier and acknowledgment or PPAP status, linked to the open SAP purchase orders affected by each change.",
+            "stories": [
+              {
+                "title": "View unacknowledged changes by supplier",
+                "as_a": "supplier quality engineer",
+                "i_want": "a dashboard of change packages filtered by supplier, status, and age",
+                "so_that": "I can chase the suppliers who have not acknowledged before parts ship",
+                "acceptance_criteria": [
+                  "Given open change packages exist, When I open the dashboard, Then I see each package's supplier, part, ECO, status, and days since publication",
+                  "Given I filter on status Not Acknowledged, When the filter is applied, Then only unacknowledged packages are listed, oldest first"
+                ],
+                "source_quotes": [
+                  "Supplier quality and purchasing need to see which suppliers have not acknowledged"
+                ],
+                "nfr_categories": []
+              },
+              {
+                "title": "See open purchase orders affected by a change",
+                "as_a": "buyer",
+                "i_want": "to see the open SAP purchase orders for each changed part, together with the supplier's acknowledgment status",
+                "so_that": "I can make sure open orders are fulfilled at the correct revision",
+                "acceptance_criteria": [
+                  "Given a released change to a purchased part, When I open its dashboard entry, Then all open SAP purchase order lines for that part are listed with PO number, supplier, quantity, and delivery date",
+                  "Given a PO line whose supplier has not acknowledged, When the dashboard is displayed, Then that line is highlighted as at risk",
+                  "Given a PO is closed in SAP, When the next data refresh runs, Then the PO no longer appears as affected"
+                ],
+                "source_quotes": [
+                  "which open purchase orders are affected"
+                ],
+                "nfr_categories": [
+                  "integration_reliability"
+                ]
+              }
+            ],
+            "wsjf": {
+              "business_value": 8,
+              "time_criticality": 5,
+              "risk_reduction": 5,
+              "job_size": 5,
+              "rationale": "Visibility is valuable for follow-up but builds on the notification and acknowledgment data, so it ranks after the core loop. The SAP PO read keeps the effort moderate."
+            }
+          },
+          {
+            "title": "Export-controlled distribution by supplier license",
+            "description": "Check each drawing's ITAR/EAR classification against each supplier's export authorization before distribution or portal access, and log every access.",
+            "stories": [
+              {
+                "title": "Maintain supplier export authorizations",
+                "as_a": "export compliance officer",
+                "i_want": "to record, for each supplier, the export classifications and licenses they are authorized to receive, with expiry dates",
+                "so_that": "distribution decisions are based on current, governed license data",
+                "acceptance_criteria": [
+                  "Given a supplier record, When I add an authorization with classification, license reference, and expiry date, Then it is saved and logged with my user ID",
+                  "Given an authorization whose expiry date has passed, When the expiry date passes, Then the authorization is treated as invalid for distribution"
+                ],
+                "source_quotes": [
+                  "each supplier must only see what they are licensed to receive"
+                ],
+                "nfr_categories": [
+                  "export_control",
+                  "data_governance"
+                ]
+              },
+              {
+                "title": "Block distribution to unlicensed suppliers",
+                "as_a": "export compliance officer",
+                "i_want": "an export-controlled change package to be withheld from any supplier lacking a matching valid authorization, and to be notified when that happens",
+                "so_that": "controlled technical data is never released to an unauthorized party",
+                "acceptance_criteria": [
+                  "Given a drawing classified as ITAR or EAR-controlled, When a recipient supplier lacks a matching valid authorization, Then the package is not published to that supplier and the export compliance officer is notified",
+                  "Given a drawing with no export classification in PLM, When the ECO is released, Then distribution to suppliers is held until a classification is recorded",
+                  "Given a supplier with a matching valid authorization, When the ECO is released, Then the package is published normally"
+                ],
+                "source_quotes": [
+                  "Some of these drawings are export controlled, so each supplier must only see what they are licensed to receive."
+                ],
+                "nfr_categories": [
+                  "export_control",
+                  "security"
+                ]
+              },
+              {
+                "title": "Log access to controlled drawings in the portal",
+                "as_a": "export compliance officer",
+                "i_want": "every view and download of an export-controlled drawing in the supplier portal to be logged with user, company, and timestamp",
+                "so_that": "I can evidence compliance and investigate any suspected unauthorized access",
+                "acceptance_criteria": [
+                  "Given a supplier user downloads a controlled drawing, When I query the access log, Then the event shows the user, company, drawing, revision, and timestamp",
+                  "Given the access log, When any user attempts to edit or delete an entry, Then the action is denied"
+                ],
+                "source_quotes": [],
+                "nfr_categories": [
+                  "export_control",
+                  "auditability",
+                  "security"
+                ]
+              }
+            ],
+            "wsjf": {
+              "business_value": 8,
+              "time_criticality": 13,
+              "risk_reduction": 20,
+              "job_size": 8,
+              "rationale": "Releasing ITAR/EAR data to an unlicensed party is an extreme compliance risk, and this control must be live before any controlled drawing is distributed, which drives high urgency. It requires license data and gating logic, so the size is medium-to-large."
+            }
+          }
+        ]
+      }
+    ],
+    "assumptions": [
+      "The ECO and drawing release are managed in Enovia/3DEXPERIENCE, and purchased parts, source lists, and open purchase orders are held in SAP.",
+      "No suitable supplier portal is in use for engineering changes today; the portal platform has not yet been selected.",
+      "Drawings in PLM carry, or can be given, an export classification attribute (ITAR/EAR/not controlled).",
+      "Supplier export license or authorization data can be held in or synchronized to a system the distribution logic can query.",
+      "Suppliers will use named portal accounts managed under the company's identity and access controls.",
+      "The audit-trail story in the acknowledgment feature still needs acceptance criteria; proposed criteria: (1) Given a published change package, When the supplier views, acknowledges, or submits PPAP, Then each event is recorded with user, company, and timestamp; (2) Given recorded history, When any user tries to modify or delete an entry, Then the action is denied; (3) Given an audit request, When the supplier quality engineer exports the history for an ECO, Then a complete chronological report is produced."
+    ],
+    "open_questions": [
+      "Which supplier portal should be used (for example SAP Ariba/SAP Business Network, an existing supplier quality portal, or 3DEXPERIENCE supplier access)?",
+      "What acknowledgment and PPAP due periods should apply, and who receives escalations?",
+      "Who decides whether a change affects form, fit, or function: the design engineer, the ECO approver, or supplier quality?",
+      "Should unacknowledged changes or pending PPAPs block goods receipt or new purchase orders in SAP, or only be shown on the dashboard?",
+      "Where is authoritative supplier export license data maintained today, and who owns it?",
+      "Should suppliers with no open PO but an active source list or quote also receive changes, and should released drawings at earlier lifecycle stages be shared?",
+      "Which plants or business units are in scope for the first release?"
+    ],
+    "proposed_personas": [
+      {
+        "name": "supplier quality engineer",
+        "description": "Manages supplier quality, PPAP approval, and supplier corrective actions for purchased parts.",
+        "goals": [
+          "Learn about engineering changes to purchased parts promptly",
+          "Confirm suppliers build to the current revision",
+          "Ensure PPAP is resubmitted when required"
+        ],
+        "pain_points": [
+          "Finds out about engineering changes too late",
+          "No confirmation that suppliers received changes or updated PPAP",
+          "Field escapes traced to suppliers building old revisions"
+        ]
+      },
+      {
+        "name": "buyer",
+        "description": "Purchasing professional who places and manages purchase orders with suppliers in SAP.",
+        "goals": [
+          "Keep open purchase orders aligned with the current drawing revision",
+          "Communicate changes to suppliers efficiently"
+        ],
+        "pain_points": [
+          "Manually emails PDFs to suppliers",
+          "Cannot see which open POs are affected by a change"
+        ]
+      },
+      {
+        "name": "supplier quality contact",
+        "description": "External supplier employee who receives engineering changes and submits PPAP documentation to the manufacturer.",
+        "goals": [
+          "Receive clear, current drawings and change notices",
+          "Acknowledge changes and submit PPAP easily"
+        ],
+        "pain_points": [
+          "Changes arrive by ad hoc email and are easy to miss",
+          "Unclear when PPAP resubmission is required"
+        ]
+      }
+    ]
+  }
+}

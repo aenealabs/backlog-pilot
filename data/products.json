@@ -1,0 +1,15 @@
+{
+  "_note": "Fictional demo products for Product Engineering & R&D IT. Edit in the app.",
+  "products": [
+    {"key": "plm", "name": "PLM / 3DEXPERIENCE", "default_capacity": 21,
+     "description": "Enterprise PLM platform: parts, documents, BOMs, ECR/ECO workflows, approvals, lifecycle states, access control, and platform security."},
+    {"key": "cad", "name": "CAD Data Management", "default_capacity": 13,
+     "description": "CAD vaults, drawings, models, assemblies, revisions, file migration, and design data storage."},
+    {"key": "plm-sap", "name": "PLM-SAP Integration", "default_capacity": 13,
+     "description": "Integration that transfers released BOMs, materials, and changes from PLM to SAP ERP for plants and purchasing, with monitoring and error handling."},
+    {"key": "data-gov", "name": "Engineering Data Governance", "default_capacity": 13,
+     "description": "Part master data quality, classification, duplicate parts, data stewardship, export-control classification, and governance reporting."},
+    {"key": "supplier", "name": "Supplier Collaboration", "default_capacity": 13,
+     "description": "Sharing drawings and engineering changes with suppliers through a supplier portal, acknowledgements, PPAP, and supplier quality."}
+  ]
+}

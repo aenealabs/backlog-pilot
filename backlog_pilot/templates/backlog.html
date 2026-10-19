@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% macro sync_chip(item) -%}
+{% set ext = item.details.get('external') %}
+{% if ext %}<a class="chip outlined" href="{{ ext.url }}" target="_blank" rel="noopener" title="Open in the tracker"><span class="material-symbols-outlined" style="font-size:16px">open_in_new</span>{{ ext.key }}</a>
+{% elif item.details.get('sync_error') %}<span class="chip trace-unverified" title="{{ item.details.sync_error }}"><span class="material-symbols-outlined" style="font-size:16px">sync_problem</span>Sync pending</span>{% endif %}
+{%- endmacro %}
+{% macro status_color(status) -%}
+{{ {'Done': 'var(--success)', 'In Progress': 'var(--primary)', 'Blocked': 'var(--error)', 'Superseded': 'var(--text-2)'}.get(status, 'var(--divider)') }}
+{%- endmacro %}
+{% block content %}
+<div class="page-header">
+  <h1>Backlog</h1>
+  <span class="chip outlined">{{ counts.get('epic', 0) }} epics · {{ counts.get('feature', 0) }} features · {{ counts.get('story', 0) }} stories</span>
+  {% if pending_sync %}
+  <form method="post" action="/sync/retry" style="margin-left:auto">
+    <button class="button outlined" type="submit"><span class="material-symbols-outlined">sync</span>Retry sync to {{ tracker_name }} ({{ pending_sync }})</button>
+  </form>
+  {% endif %}
+  {% if counts.superseded %}
+  <a class="button text" style="margin-left:auto" href="/backlog{{ '' if show_superseded else '?superseded=true' }}">
+    <span class="material-symbols-outlined">{{ 'visibility_off' if show_superseded else 'visibility' }}</span>
+    {{ 'Hide' if show_superseded else 'Show' }} superseded ({{ counts.superseded }})</a>
+  {% endif %}
+</div>
+
+<div class="product-tabs">
+  <a class="product-tab {{ 'active' if not selected }}" href="/backlog">All products</a>
+  {% for p in products %}<a class="product-tab {{ 'active' if selected and selected.id == p.id }}" href="/backlog?product={{ p.key }}">{{ p.name }}</a>{% endfor %}
+</div>
+
+{% if not tree %}
+<div class="card"><div class="empty">
+  <span class="material-symbols-outlined">inventory_2</span>
+  <h3>No backlog items yet</h3>
+  <p>Draft your first epic from <a href="/">New intake</a>.</p>
+</div></div>
+{% endif %}
+
+{% for epic in tree %}{% set e = epic.item %}
+<div class="card">
+  <div class="list-item">
+    <span class="status-bar" style="background: {{ status_color(e.status) }}"></span>
+    <span class="avatar"><span class="material-symbols-outlined">flag</span></span>
+    <div class="text">
+      <div class="primary">{{ e.title }}{% if e.details.get('ai_title') %} <span class="muted reworded" title="The AI drafted: {{ e.details.ai_title }}">· reworded</span>{% endif %}</div>
+      <div class="secondary">{{ e.details.get('business_outcome') or e.details.get('description', '') }}</div>
+    </div>
+    {% if e.product_id %}<span class="chip outlined" title="Product"><span class="material-symbols-outlined" style="font-size:16px">apps</span>{{ product_names[e.product_id] }}</span>{% endif %}
+    {% if e.intake_id %}<a class="chip outlined" href="/intakes/{{ e.intake_id }}" title="Assumptions &amp; questions">
+      <span class="material-symbols-outlined" style="font-size:16px">forum</span>Intake</a>{% endif %}
+    {% if e.source == 'backlog-pilot' %}<span class="chip outlined">
+      <span class="material-symbols-outlined" style="font-size:16px">auto_awesome</span>AI-drafted</span>{% endif %}
+    {{ sync_chip(e) }}
+    <span class="chip">{{ e.status }}</span>
+    <span class="mono muted">{{ e.key }}</span>
+  </div>
+  {% for feature in epic.children %}{% set f = feature.item %}
+  <div class="list-item" style="padding-left:72px">
+    <span class="material-symbols-outlined muted">widgets</span>
+    <div class="text">
+      <div class="primary">{{ f.title }}{% if f.details.get('ai_title') %} <span class="muted reworded" title="The AI drafted: {{ f.details.ai_title }}">· reworded</span>{% endif %}</div>
+      {% if feature.children %}<div class="secondary">{{ feature.children | length }} stories</div>{% endif %}
+    </div>
+    {% for r in f.details.get('related', []) %}<span class="chip outlined" title="Linked as related during review"><span class="material-symbols-outlined" style="font-size:16px">join_inner</span>{{ r }}</span>{% endfor %}
+    {{ sync_chip(f) }}
+    <span class="chip">{{ f.status }}</span>
+    <span class="mono muted">{{ f.key }}</span>
+  </div>
+    {% for story in feature.children %}{% set s = story.item %}
+    <div class="list-item" style="padding-left:112px; min-height:48px">
+      <span class="material-symbols-outlined muted" style="font-size:20px">description</span>
+      <div class="text">
+        <div>{{ s.title }}{% if s.details.get('ai_title') %} <span class="muted reworded" title="The AI drafted: {{ s.details.ai_title }}">· reworded</span>{% endif %}</div>
+        <div class="secondary">As a {{ s.details.as_a }}, I want {{ s.details.i_want }}</div>
+      </div>
+      {% for r in s.details.get('related', []) %}<span class="chip outlined" title="Linked as related during review">{{ r }}</span>{% endfor %}
+      {% set t = traces.get(s.key) %}
+      {% if t %}<span class="chip trace-{{ t.status }}" title="{{ t.quotes | map('first') | join(' | ') if t.quotes else 'No stakeholder words support this story' }}">{{ {'traced': 'Traced', 'inferred': 'AI inference', 'unverified': 'Quote not found'}[t.status] }}</span>{% endif %}
+      {% set persona = s.details.get('as_a', '') | lower | trim %}
+      {% if persona and persona not in known_personas %}<span class="chip trace-unverified" title="Not in the persona library">{{ persona }}</span>{% endif %}
+      {{ sync_chip(s) }}
+      <span class="mono muted">{{ s.key }}</span>
+    </div>
+    {% endfor %}
+  {% endfor %}
+</div>
+{% endfor %}
+{% endblock %}

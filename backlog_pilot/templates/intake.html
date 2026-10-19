@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+  <h1>New intake</h1>
+  <span class="muted">Paste a stakeholder request, email, or meeting notes.</span>
+</div>
+
+<div class="grid-2">
+  <div>
+    <form class="card" hx-post="/decompose" hx-target="#result" hx-swap="innerHTML"
+          hx-indicator="this" hx-disabled-elt="find button[type=submit]">
+      <input type="hidden" name="inbox_id" id="inbox-id" value="">
+      <div class="card-body">
+        <div class="field">
+          <label for="intake-text">Stakeholder input</label>
+          <textarea id="intake-text" name="text" required
+            placeholder="e.g. Our ECO approvals take three weeks on average and engineers can't see where a change is stuck…"></textarea>
+        </div>
+        <div class="actions">
+          <button type="submit" class="button contained">
+            <span class="material-symbols-outlined">auto_awesome</span>
+            <span class="idle-label">Draft backlog</span>
+            <span class="loading-label">Drafting…</span>
+          </button>
+        </div>
+      </div>
+      <div class="progress" role="progressbar" aria-label="Drafting"></div>
+    </form>
+  </div>
+
+  <div>
+    {% if inbox %}
+    <div class="card inbox-card">
+      <div class="card-header"><span class="material-symbols-outlined" style="color:var(--primary)">move_to_inbox</span>
+        <h3>Inbox</h3><span class="chip primary">{{ inbox | length }}</span>
+        <span class="muted" style="margin-left:auto;font-size:12px">From {{ inbox | map(attribute='source_app') | unique | join(', ') }}</span></div>
+      <ul class="list">
+        {% for item in inbox %}
+        <li class="list-item">
+          <div class="text">
+            <div class="primary">{{ item.title }} <span class="mono muted">{{ item.source_ref }}</span></div>
+            <div class="secondary">{{ item.source_app }}{% if item.stakeholder_list %} · raised by {{ item.stakeholder_list | join(', ') }}{% endif %} · sent by {{ item.submitted_by }}</div>
+            <div class="inbox-actions">
+              <button type="button" class="button text" data-inbox="{{ item.id }}" data-text="{{ item.text }}">
+                <span class="material-symbols-outlined">edit_note</span>Draft from this</button>
+              {% if item.source_url %}<a class="button text" href="{{ item.source_url }}" target="_blank" rel="noopener">Open in {{ item.source_app }}</a>{% endif %}
+              <button type="button" class="button text" hx-post="/inbox/{{ item.id }}/dismiss" hx-prompt="Why dismiss it? (optional, logged)">Dismiss</button>
+            </div>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+    <div class="card">
+      <div class="card-header"><h3>Demo scenarios</h3></div>
+      <ul class="list">
+        {% for s in scenarios %}
+        <li class="list-item clickable" data-scenario="{{ s.text }}" tabindex="0">
+          <span class="avatar"><span class="material-symbols-outlined">{{ s.icon }}</span></span>
+          <div class="text">
+            <div class="primary">{{ s.title }}</div>
+            <div class="secondary">{{ s.from }}</div>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div class="card">
+      <div class="stats">
+        <div class="stat"><div class="value">{{ counts.get('epic', 0) }}</div><div class="label">Epics</div></div>
+        <div class="stat"><div class="value">{{ counts.get('feature', 0) }}</div><div class="label">Features</div></div>
+        <div class="stat"><div class="value">{{ counts.get('story', 0) }}</div><div class="label">Stories</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="result"></div>
+{% endblock %}

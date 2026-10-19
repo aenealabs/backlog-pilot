@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% macro hl(text) %}{{ text | highlight_terms(terms) }}{% endmacro %}
+{% block content %}
+<div class="page-header">
+  <h1>Audit log</h1>
+  <span class="muted">Every draft, edit, answer, score, and decision, with who and when. Search it or ask it a question.</span>
+</div>
+
+<div class="card ask-card">
+  <form method="get" action="/audit" class="card-body ask-form">
+    <span class="material-symbols-outlined">manage_search</span>
+    <input type="text" name="ask" value="{{ ask }}" placeholder="Ask the audit log, e.g. who changed WSJF scores and why?" aria-label="Ask the audit log">
+    <button class="button contained" type="submit">Ask</button>
+  </form>
+  <div class="suggested">
+    {% for qn in questions %}<a class="chip outlined" href="/audit?ask={{ qn | urlencode }}">{{ qn }}</a>{% endfor %}
+  </div>
+</div>
+
+{% if message %}<div class="banner error" role="alert"><span class="material-symbols-outlined">error</span><div>{{ message }}</div></div>{% endif %}
+
+{% if plan %}
+<div class="card answer-card">
+  <div class="card-header"><h3>{{ ask }}</h3></div>
+  <div class="card-body">
+    <div class="muted plan"><span class="material-symbols-outlined">travel_explore</span>Searched: {{ plan.explanation }}
+      <span class="chip outlined">{{ total | plural('matching event') }}</span></div>
+    {% if answer %}
+    <div class="answer">{{ answer | cite_links | safe }}</div>
+    <div class="muted" style="font-size:12px">AI answer from the matching events only. Each [#n] links to its event below
+      {%- if unverified %}; {{ unverified | length | plural('citation') }} the model gave did not match a retrieved event and {{ 'was' if unverified | length == 1 else 'were' }} marked [unverified]{% endif %}.</div>
+    {% elif summary %}
+    <div class="summary-grid">
+      <div><div class="overline">Who</div>{% for p, n in summary['people'] %}<div>{{ p }} <span class="muted">· {{ n }}</span></div>{% endfor %}</div>
+      <div><div class="overline">What</div>{% for c, n in summary['categories'] %}<div>{{ c }} <span class="muted">· {{ n }}</span></div>{% endfor %}</div>
+      <div><div class="overline">Items</div>{% for k, n in summary['items'] %}<span class="chip outlined" style="margin:0 4px 4px 0">{{ k }} · {{ n }}</span>{% else %}<span class="muted">None named</span>{% endfor %}</div>
+      <div><div class="overline">When</div><div>{{ summary['first'].strftime('%Y-%m-%d %H:%M') }} to {{ summary['last'].strftime('%Y-%m-%d %H:%M') }} UTC</div></div>
+    </div>
+    <div class="muted" style="font-size:12px">Summary computed from {{ summary['count'] | plural('event') }} shown{% if provider_name == 'replay' %}; switch to live AI mode for a written answer with citations{% endif %}.</div>
+    {% else %}
+    <div class="muted">No events match.</div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<form method="get" action="/audit" class="card filter-bar">
+  <input type="text" name="q" value="{{ query.text if not plan else '' }}" placeholder="Words in the log" aria-label="Search text">
+  <select name="actor_filter" aria-label="Person">
+    <option value="">Anyone</option>
+    {% for p in people %}<option value="{{ p }}" {{ 'selected' if not plan and query.actor == p }}>{{ p }}</option>{% endfor %}
+  </select>
+  <select name="category" aria-label="Category">
+    <option value="">Any activity</option>
+    {% for key, label in categories.items() %}<option value="{{ key }}" {{ 'selected' if not plan and key in query.categories }}>{{ label }}</option>{% endfor %}
+  </select>
+  <input type="text" name="item" value="{{ query.item_keys | join(' ') if not plan else '' }}" placeholder="Item, e.g. BP-112" aria-label="Item key" style="max-width:150px">
+  <input type="date" name="since" value="{{ query.since or '' if not plan else '' }}" aria-label="From date">
+  <input type="date" name="until" value="{{ query.until or '' if not plan else '' }}" aria-label="To date">
+  <button class="button outlined" type="submit"><span class="material-symbols-outlined">filter_list</span>Search</button>
+  {% if not query.is_empty() or plan %}<a class="button text" href="/audit">Clear</a>{% endif %}
+</form>
+
+<div class="card">
+  <div class="card-header"><h3>{{ 'Matching events' if not query.is_empty() else 'All events' }}</h3>
+    <span class="chip outlined">{{ total | plural('event') }}</span>
+    {% if total > page_size %}<span class="muted" style="margin-left:auto">Page {{ page }} of {{ ((total - 1) // page_size) + 1 }}</span>{% endif %}</div>
+  {% if events %}
+  <table>
+    <thead><tr><th>#</th><th>When (UTC)</th><th>Actor</th><th>Action</th><th>Detail</th></tr></thead>
+    <tbody>
+    {% for ev in events %}
+      <tr id="ev-{{ ev.id }}" class="{{ 'cited' if ev.id in cited }}">
+        <td class="mono muted">{{ ev.id }}</td>
+        <td class="mono">{{ ev.at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+        <td>{{ hl(ev.actor) }}</td>
+        <td><span class="chip {{ 'primary' if ev.action == 'approve_and_push' }}">{{ ev.action }}</span></td>
+        <td>{{ hl(ev.detail) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if total > page_size %}
+  <div class="actions" style="padding:8px 16px">
+    {% set args = request.query_params | dict_without('page') %}
+    {% if page > 1 %}<a class="button text" href="/audit?{{ args | urlencode }}&page={{ page - 1 }}">Previous</a>{% endif %}
+    {% if page * page_size < total %}<a class="button text" href="/audit?{{ args | urlencode }}&page={{ page + 1 }}">Next</a>{% endif %}
+  </div>
+  {% endif %}
+  {% else %}
+  <div class="empty">
+    <span class="material-symbols-outlined">history</span>
+    <h3>{{ 'No matching events' if not query.is_empty() else 'No activity yet' }}</h3>
+    <p>{{ 'Try fewer words or a wider date range.' if not query.is_empty() else 'Drafts and approvals will appear here.' }}</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

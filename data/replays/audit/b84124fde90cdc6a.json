@@ -1,0 +1,14 @@
+{
+  "question": "Show every roadmap and capacity decision and who made it.",
+  "plan": {
+    "keywords": [],
+    "actor": "",
+    "categories": [
+      "roadmap"
+    ],
+    "item_keys": [],
+    "since": null,
+    "until": null,
+    "explanation": "Searches all roadmap-category events (capacity changes, roadmap actions, product updates) across all dates and actors, showing who made each one."
+  }
+}

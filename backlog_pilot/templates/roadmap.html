@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block content %}
+{% set moves = {} %}{% for c in changes | reverse %}{% set _ = moves.update({c.feature_key: c}) %}{% endfor %}
+<div class="page-header">
+  <h1>Roadmap</h1>
+  <span class="muted">Planned from WSJF and quarterly capacity. Change a score, capacity, or pin and the plan updates, with every move logged.</span>
+  <a class="button outlined" style="margin-left:auto" href="/roadmap/portfolio"><span class="material-symbols-outlined">view_timeline</span>Portfolio view</a>
+</div>
+{% if message %}<div class="banner error" role="alert"><span class="material-symbols-outlined">error</span><div>{{ message }}</div></div>{% endif %}
+
+<div class="product-tabs" role="tablist">
+  {% for p in products %}
+  <a role="tab" class="product-tab {{ 'active' if p.id == selected.id }}" href="/roadmap?product={{ p.key }}">{{ p.name }}</a>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div><h3>{{ selected.name }}</h3><div class="muted" style="font-size:12px">{{ selected.description }}</div></div>
+  </div>
+
+  <form method="post" action="/roadmap/{{ selected.key }}/capacity">
+  <div class="timeline" style="--cols: {{ plan.quarters | length }}">
+    <div class="tl-head tl-label">Epic / feature</div>
+    {% for q in plan.quarters %}<div class="tl-head">{{ q | quarter }}{% if loop.first %} <span class="chip outlined">now</span>{% endif %}</div>{% endfor %}
+
+    <div class="tl-label tl-cap-label" title="Capacity in WSJF job-size points">Capacity (points)</div>
+    {% for q in plan.quarters %}{% set used, cap = plan.used[q], plan.capacity[q] %}
+    <div class="tl-cap {{ 'over' if used > cap }}">
+      <div class="meter"><span style="width: {{ [100, (used / cap * 100) if cap else 100] | min }}%"></span></div>
+      <span>{{ used }} /</span>
+      <input type="number" name="cap:{{ q }}" value="{{ cap }}" min="0" max="200" aria-label="Capacity {{ q | quarter }}">
+      {% if used > cap %}<span class="material-symbols-outlined" title="Over capacity: pinned or in-progress work exceeds it">warning</span>{% endif %}
+    </div>
+    {% endfor %}
+
+    {% for epic in plan.epic_spans() %}
+    <div class="tl-label tl-epic"><span class="material-symbols-outlined">flag</span>{{ epic.title }} <span class="mono muted">{{ epic.key }}</span></div>
+    <div class="tl-epic-bar" style="grid-column: {{ epic.start + 2 }} / {{ epic.end + 3 }}">{{ epic.features | length | plural('feature') }}</div>
+    {% for p in epic.features %}{% set f = p.feature %}{% set qi = plan.quarters.index(p.quarter) %}
+    <details class="tl-label tl-feature">
+      <summary>{{ f.title }} <span class="mono muted">{{ f.key }}</span></summary>
+      <div class="tl-detail">
+        <div>{{ f.status }} · size {{ f.size }} · WSJF {{ f.score }} · <em>{{ p.reason }}</em></div>
+        <form method="post" action="/features/{{ f.key }}/pin" class="pin-form">
+          <select name="quarter" aria-label="Pin to quarter">
+            <option value="">{{ 'Unpin' if f.pin else 'Pin to…' }}</option>
+            {% for q in plan.quarters %}<option value="{{ q }}" {{ 'selected' if f.pin == q }}>{{ q | quarter }}</option>{% endfor %}
+          </select>
+          <input type="text" name="reason" placeholder="Why pin it here? (needed to pin)" aria-label="Pin reason">
+          <button class="button text" type="submit">Save</button>
+          <a class="button text" href="/priorities?edit={{ f.key }}">Re-score</a>
+        </form>
+      </div>
+    </details>
+    <div class="tl-bar status-{{ f.status | lower | replace(' ', '-') }}" style="grid-column: {{ qi + 2 }}"
+         title="{{ p.reason }}">
+      {% if f.pin %}<span class="material-symbols-outlined" title="Pinned{{ ': ' ~ f.pin_reason if f.pin_reason }}">push_pin</span>{% endif %}
+      <strong>{{ f.size }}</strong> pts · WSJF {{ f.score }}
+      {% set m = moves.get(f.key) %}{% if m and m.to_quarter == p.quarter %}
+      <span class="moved" title="{{ m.cause }} · {{ m.changed_by }}">{{ 'new' if m.from_quarter in ('', 'new') else 'moved from ' ~ (m.from_quarter | slot) }}</span>{% endif %}
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="tl-empty">No scored features planned for this product yet.</div>
+    {% endfor %}
+  </div>
+  <div class="actions" style="padding:0 16px 12px"><button class="button outlined" type="submit">Save capacity</button></div>
+  </form>
+</div>
+
+<div class="grid-2">
+  <div>
+    {% if plan.unplanned %}
+    <div class="card">
+      <div class="card-header"><h3>Unplanned</h3><span class="chip trace-unverified">over capacity</span>
+        <span class="muted" style="margin-left:auto">Raise capacity, pin, or re-score to bring these in.</span></div>
+      <ul class="list">{% for p in plan.unplanned %}{% set f = p.feature %}
+        <li class="list-item"><div class="text"><div class="primary">{{ f.title }} <span class="mono muted">{{ f.key }}</span></div>
+          <div class="secondary">{{ f.epic_title }} · size {{ f.size }} · WSJF {{ f.score }}</div></div>
+          <a class="button text" href="/priorities?edit={{ f.key }}">Re-score</a></li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+    {% if plan.unscored %}
+    <div class="card">
+      <div class="card-header"><h3>Not scored</h3><span class="muted" style="margin-left:auto">Score them to put them on the roadmap.</span></div>
+      <ul class="list">{% for f in plan.unscored %}
+        <li class="list-item"><div class="text"><div class="primary">{{ f.title }} <span class="mono muted">{{ f.key }}</span></div>
+          <div class="secondary">{{ f.epic_title }} · {{ f.status }}</div></div>
+          <a class="button text" href="/priorities?edit={{ f.key }}">Score</a></li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+    {% if plan.done %}
+    <div class="card"><div class="card-header"><h3>Done</h3></div>
+      <ul class="list">{% for f in plan.done %}<li class="list-item" style="min-height:44px"><div class="text">{{ f.title }} <span class="mono muted">{{ f.key }}</span></div></li>{% endfor %}</ul></div>
+    {% endif %}
+    <details class="card product-settings"><summary class="card-header"><h3>Product settings</h3></summary>
+      <form method="post" action="/products/{{ selected.key }}" class="card-body persona-form">
+        <div class="field"><label>Name</label><input type="text" name="name" value="{{ selected.name }}" required></div>
+        <div class="field"><label>Description <span class="muted">(used to suggest this product for new epics)</span></label>
+          <textarea name="description" rows="3">{{ selected.description }}</textarea></div>
+        <div class="field"><label>Default capacity per quarter (points)</label>
+          <input type="number" name="default_capacity" value="{{ selected.default_capacity }}" min="0" max="200"></div>
+        <div class="actions"><button class="button contained" type="submit">Save product</button></div>
+      </form>
+    </details>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3>Roadmap changes</h3></div>
+    {% if changes %}
+    <ul class="list">{% for c in changes %}
+      <li class="list-item change">
+        <div class="text">
+          <div class="primary">{{ c.feature_title }} <span class="mono muted">{{ c.feature_key }}</span></div>
+          <div class="secondary">{{ c.from_quarter | slot }}
+            → {{ c.to_quarter | slot }} · {{ c.cause }}</div>
+          <div class="secondary">{{ c.changed_by }} · {{ c.changed_at.strftime('%Y-%m-%d %H:%M') }} UTC</div>
+        </div>
+      </li>{% endfor %}</ul>
+    {% else %}
+    <div class="empty" style="padding:24px"><span class="material-symbols-outlined" style="font-size:40px">timeline</span>
+      <p>No moves yet. Re-score a feature, change capacity, or pin one, and each move appears here.</p></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

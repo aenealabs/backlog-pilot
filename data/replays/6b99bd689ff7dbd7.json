@@ -1,0 +1,305 @@
+{
+  "input": "Our engineering change orders are taking an average of 19 business days from submission to release in PLM, and the target is 7. Engineers tell me they have no idea where a change is stuck, approvers get flooded with notification emails and miss the ones that matter, and about a third of ECOs get rejected for missing information like the affected-parts list or the cost impact. When a change finally releases, manufacturing sometimes doesn't see the updated BOM in SAP for another two days. I need visibility into where changes are stuck, fewer rejections, and the BOM to reach the plants the same day.",
+  "decomposition": {
+    "summary": "Reduce engineering change order cycle time from an average of 19 business days to the 7-day target. The backlog covers visibility of stuck changes, fewer rejections for incomplete ECOs, less approver notification overload, and same-day delivery of released BOMs from PLM to SAP for the plants.",
+    "epics": [
+      {
+        "title": "Cut ECO cycle time from 19 to 7 business days",
+        "description": "Make every ECO's status and bottleneck visible. Stop incomplete ECOs at submission. Give approvers prioritized, actionable notifications instead of email floods.",
+        "business_outcome": "Average ECO submission-to-release time falls from 19 to 7 business days. The ECO rejection rate for missing information falls from about one third to a stakeholder-agreed target.",
+        "features": [
+          {
+            "title": "ECO status and bottleneck visibility",
+            "description": "Show the current stage, owner, and time-in-stage for each ECO, with an aging view so managers can find and clear stuck changes.",
+            "stories": [
+              {
+                "title": "See where my ECO is stuck",
+                "as_a": "design engineer",
+                "i_want": "to see my ECO's current workflow stage, the person or role it is waiting on, and how many business days it has been in that stage",
+                "so_that": "I can follow up with the right person instead of guessing where the change is",
+                "acceptance_criteria": [
+                  "Given I submitted an ECO, When I open it in PLM, Then I see its current stage, the assigned approver or role, and the business days in that stage",
+                  "Given an ECO has moved stages, When I view its history, Then each stage shows entry and exit timestamps",
+                  "Given I own several open ECOs, When I open 'My changes', Then they are listed with stage and days-in-stage, sortable by age"
+                ],
+                "source_quotes": [
+                  "Engineers tell me they have no idea where a change is stuck",
+                  "I need visibility into where changes are stuck"
+                ],
+                "nfr_categories": []
+              },
+              {
+                "title": "ECO aging dashboard for managers",
+                "as_a": "engineering manager",
+                "i_want": "a dashboard of open ECOs by stage, with average cycle time against the 7-day target and the ECOs over a configurable aging threshold highlighted",
+                "so_that": "I can intervene on bottlenecks and track progress toward the target",
+                "acceptance_criteria": [
+                  "Given open ECOs exist for my team, When I open the dashboard, Then I see counts and average days per workflow stage",
+                  "Given an ECO exceeds the aging threshold in a stage, When the dashboard refreshes, Then that ECO is flagged and I can drill into it",
+                  "Given ECOs released in a period, When I select the period, Then the average submission-to-release business days is shown next to the 7-day target"
+                ],
+                "source_quotes": [
+                  "Our engineering change orders are taking an average of 19 business days from submission to release in PLM, and the target is 7.",
+                  "I need visibility into where changes are stuck"
+                ],
+                "nfr_categories": []
+              },
+              {
+                "title": "Respect export control in ECO visibility",
+                "as_a": "export compliance officer",
+                "i_want": "ECO status views and dashboards to show ITAR/EAR-controlled ECO details only to users authorized for that data",
+                "so_that": "wider visibility of changes does not expose controlled technical data",
+                "acceptance_criteria": [
+                  "Given an ECO touches export-controlled parts, When an unauthorized user views the dashboard, Then only non-controlled metadata (ID, stage, age) is shown and technical details are hidden",
+                  "Given an authorized user, When they open the same ECO, Then full details are visible",
+                  "Given any access to a controlled ECO's details, When it occurs, Then the user, time, and ECO are logged for audit"
+                ],
+                "source_quotes": [],
+                "nfr_categories": [
+                  "export_control",
+                  "security",
+                  "auditability"
+                ]
+              }
+            ],
+            "wsjf": {
+              "business_value": 13,
+              "time_criticality": 8,
+              "risk_reduction": 5,
+              "job_size": 5,
+              "rationale": "Visibility is the stakeholder's first ask and lets managers attack the 19-day cycle directly. Most of the data already exists in the PLM workflow, so effort is moderate."
+            }
+          },
+          {
+            "title": "ECO completeness validation at submission",
+            "description": "Block ECO submission until mandatory information such as the affected-parts list and cost impact is complete, and capture structured rejection reasons.",
+            "stories": [
+              {
+                "title": "Require affected parts and cost impact before submit",
+                "as_a": "design engineer",
+                "i_want": "PLM to check my ECO for mandatory fields, including the affected-parts list and cost impact, before I can submit it",
+                "so_that": "my change is not rejected later for missing information",
+                "acceptance_criteria": [
+                  "Given an ECO with no affected parts, When I click submit, Then submission is blocked and the missing field is identified",
+                  "Given an ECO with no cost impact entered, When I click submit, Then submission is blocked with a message naming the cost impact field",
+                  "Given all mandatory fields are complete, When I submit, Then the ECO enters the approval workflow"
+                ],
+                "source_quotes": [
+                  "about a third of ECOs get rejected for missing information like the affected-parts list or the cost impact",
+                  "fewer rejections"
+                ],
+                "nfr_categories": [
+                  "data_governance"
+                ]
+              },
+              {
+                "title": "Maintain ECO completeness rules",
+                "as_a": "engineering data steward",
+                "i_want": "to configure which ECO fields are mandatory, by change type, without a code release",
+                "so_that": "completeness rules stay aligned with what approvers actually need",
+                "acceptance_criteria": [
+                  "Given I have steward rights, When I mark a field mandatory for a change type, Then new ECOs of that type enforce it",
+                  "Given a rule change, When it is saved, Then the change, author, and timestamp are recorded in an audit log",
+                  "Given a user without steward rights, When they try to edit rules, Then access is denied"
+                ],
+                "source_quotes": [],
+                "nfr_categories": [
+                  "data_governance",
+                  "auditability",
+                  "security"
+                ]
+              },
+              {
+                "title": "Record structured rejection reasons",
+                "as_a": "eco approver",
+                "i_want": "to select a rejection reason from a defined list, plus an optional comment, when I reject an ECO",
+                "so_that": "recurring causes of rejection can be measured and removed",
+                "acceptance_criteria": [
+                  "Given I reject an ECO, When I submit the rejection, Then a reason code is mandatory",
+                  "Given rejected ECOs over a period, When the engineering manager runs the rejection report, Then the counts per reason code are shown",
+                  "Given an ECO is rejected, When the submitter opens it, Then the reason and comment are visible"
+                ],
+                "source_quotes": [
+                  "fewer rejections"
+                ],
+                "nfr_categories": [
+                  "auditability"
+                ]
+              }
+            ],
+            "wsjf": {
+              "business_value": 13,
+              "time_criticality": 8,
+              "risk_reduction": 8,
+              "job_size": 3,
+              "rationale": "About a third of ECOs are rejected and resubmitted, a large and cheap-to-fix driver of cycle time. Mandatory-field validation is small configuration work that also improves data quality."
+            }
+          },
+          {
+            "title": "Prioritized approver notifications",
+            "description": "Replace notification floods with a prioritized approval queue, daily digests, and escalation of overdue approvals.",
+            "stories": [
+              {
+                "title": "Prioritized approval queue and digest",
+                "as_a": "eco approver",
+                "i_want": "a single prioritized queue of ECOs awaiting my action and a daily digest instead of one email per event",
+                "so_that": "I don't miss the changes that need my decision",
+                "acceptance_criteria": [
+                  "Given several ECOs are awaiting my approval, When I open my queue, Then they are ordered by priority and age",
+                  "Given informational events such as comments or status changes on ECOs I am not approving, When they occur, Then they go into the daily digest rather than immediate emails",
+                  "Given an ECO is assigned to me for approval, When it arrives, Then I receive one actionable notification with a direct link"
+                ],
+                "source_quotes": [
+                  "approvers get flooded with notification emails and miss the ones that matter"
+                ],
+                "nfr_categories": []
+              },
+              {
+                "title": "Escalate overdue approvals",
+                "as_a": "engineering manager",
+                "i_want": "automatic reminders and escalation when an approval exceeds a configurable response time",
+                "so_that": "changes don't stall silently with one approver",
+                "acceptance_criteria": [
+                  "Given an approval pending past the reminder threshold, When the threshold passes, Then the approver receives a single reminder",
+                  "Given an approval pending past the escalation threshold, When it passes, Then the approver's manager or delegate is notified",
+                  "Given an escalation occurs, When I view the ECO history, Then the escalation event is recorded"
+                ],
+                "source_quotes": [
+                  "I need visibility into where changes are stuck"
+                ],
+                "nfr_categories": [
+                  "auditability"
+                ]
+              }
+            ],
+            "wsjf": {
+              "business_value": 8,
+              "time_criticality": 5,
+              "risk_reduction": 3,
+              "job_size": 5,
+              "rationale": "Missed approvals add waiting time, but the benefit grows once visibility and completeness are in place. Notification redesign takes moderate workflow and configuration effort."
+            }
+          }
+        ]
+      },
+      {
+        "title": "Same-day BOM delivery from PLM to SAP",
+        "description": "Released engineering BOM changes reach SAP and the plants on the day of release, with integration monitoring and control of export-controlled data.",
+        "business_outcome": "Released ECO BOM changes are available in SAP on the same day for an agreed share of releases, replacing the current lag of up to two days.",
+        "features": [
+          {
+            "title": "Event-driven EBOM transfer to SAP on release",
+            "description": "Trigger the EBOM transfer to SAP automatically when an ECO releases, and tell the plants when updated BOMs arrive.",
+            "stories": [
+              {
+                "title": "Transfer EBOM to SAP on ECO release",
+                "as_a": "plm administrator",
+                "i_want": "ECO release in PLM to trigger an EBOM transfer to SAP immediately",
+                "so_that": "updated BOMs are not held until a batch run",
+                "acceptance_criteria": [
+                  "Given an ECO is released, When release completes, Then the transfer of the affected EBOMs to SAP starts within an agreed number of minutes",
+                  "Given the transfer succeeds, When I check SAP, Then the BOM revision and effectivity match PLM",
+                  "Given releases during the business day, When measured over a month, Then the agreed share are in SAP the same day"
+                ],
+                "source_quotes": [
+                  "When a change finally releases, manufacturing sometimes doesn't see the updated BOM in SAP for another two days.",
+                  "the BOM to reach the plants the same day"
+                ],
+                "nfr_categories": [
+                  "integration_reliability"
+                ]
+              },
+              {
+                "title": "Notify plants of updated BOMs",
+                "as_a": "manufacturing engineer",
+                "i_want": "a notification when an updated BOM for my plant arrives in SAP, linked to the ECO",
+                "so_that": "I can update the MBOM and routings without waiting or checking manually",
+                "acceptance_criteria": [
+                  "Given a BOM for my plant is posted to SAP from an ECO, When posting succeeds, Then I receive a notification with the ECO number and affected materials",
+                  "Given I open the notification, When I follow the link, Then I see the ECO change summary",
+                  "Given a BOM affects a plant I am not subscribed to, When it posts, Then I am not notified"
+                ],
+                "source_quotes": [
+                  "When a change finally releases, manufacturing sometimes doesn't see the updated BOM in SAP for another two days."
+                ],
+                "nfr_categories": []
+              }
+            ],
+            "wsjf": {
+              "business_value": 13,
+              "time_criticality": 8,
+              "risk_reduction": 8,
+              "job_size": 8,
+              "rationale": "Removes up to two days of plant delay and is an explicit goal. Changing the PLM-SAP integration trigger is a larger job that depends on the existing middleware."
+            }
+          },
+          {
+            "title": "Integration monitoring, recovery, and controlled data handling",
+            "description": "Monitor PLM-to-SAP BOM transfers, recover from failures quickly, and keep export-control classification intact across systems.",
+            "stories": [
+              {
+                "title": "Monitor and retry failed BOM transfers",
+                "as_a": "plm administrator",
+                "i_want": "a monitor of BOM transfer status, with alerts on failure and the ability to reprocess",
+                "so_that": "failures are fixed the same day instead of being discovered by the plants",
+                "acceptance_criteria": [
+                  "Given a transfer fails, When the error occurs, Then an alert is sent to the support group with the ECO, BOM, and error message",
+                  "Given a failed transfer, When I reprocess it after fixing the cause, Then it posts without creating duplicates",
+                  "Given any transfer, When I search by ECO number, Then I see its status and timestamps end to end"
+                ],
+                "source_quotes": [
+                  "the BOM to reach the plants the same day"
+                ],
+                "nfr_categories": [
+                  "integration_reliability",
+                  "auditability"
+                ]
+              },
+              {
+                "title": "Carry export classification to SAP",
+                "as_a": "export compliance officer",
+                "i_want": "ITAR/EAR classification on parts and BOMs to transfer to SAP together with the BOM",
+                "so_that": "faster transfers do not expose controlled data to unauthorized plant users",
+                "acceptance_criteria": [
+                  "Given a BOM includes export-controlled parts, When it transfers, Then the classification fields arrive in SAP with the materials",
+                  "Given a controlled part is missing its classification, When transfer is attempted, Then that item is held and the compliance officer is alerted",
+                  "Given a transfer of controlled data, When it completes, Then a log records the data sent, its destination, and the time"
+                ],
+                "source_quotes": [],
+                "nfr_categories": [
+                  "export_control",
+                  "security",
+                  "data_governance",
+                  "auditability"
+                ]
+              }
+            ],
+            "wsjf": {
+              "business_value": 5,
+              "time_criticality": 5,
+              "risk_reduction": 13,
+              "job_size": 5,
+              "rationale": "A same-day target is only reliable with fast failure recovery, and controlled data must not leak. The compliance risk reduction is high, while effort is moderate."
+            }
+          }
+        ]
+      }
+    ],
+    "assumptions": [
+      "The 19-day average is measured from ECO submission to release in Enovia/3DEXPERIENCE using business days.",
+      "The current PLM-to-SAP BOM transfer is batch or partly manual, which causes the up to two-day lag.",
+      "Existing PLM workflow data (stage timestamps, assignees) can feed status views and dashboards.",
+      "Some ECOs involve ITAR/EAR-controlled parts, so visibility and integration features must enforce export control.",
+      "Plant users consume BOMs from SAP, not directly from PLM."
+    ],
+    "open_questions": [
+      "Which fields besides affected parts and cost impact should be mandatory, and do they differ by change type?",
+      "What rejection-rate target should we aim for in place of the current one third?",
+      "What do 'same day' and the cut-off time mean for plants in different time zones?",
+      "What aging and escalation thresholds per workflow stage are acceptable, and who receives escalations?",
+      "Which integration middleware currently moves BOMs to SAP, and who owns it?",
+      "Is the 7-day target for all ECO types, or are fast-track and complex changes handled differently?"
+    ],
+    "proposed_personas": []
+  }
+}

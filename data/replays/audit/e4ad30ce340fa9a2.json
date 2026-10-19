@@ -1,0 +1,14 @@
+{
+  "question": "Who changed WSJF scores, and what reasons did they give?",
+  "plan": {
+    "keywords": [],
+    "actor": "",
+    "categories": [
+      "prioritization"
+    ],
+    "item_keys": [],
+    "since": null,
+    "until": null,
+    "explanation": "All prioritization (WSJF) events across the whole log, any actor, so the reviewer can see who changed scores and the reasons recorded in each detail."
+  }
+}

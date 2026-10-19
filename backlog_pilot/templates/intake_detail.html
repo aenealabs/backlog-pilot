@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}{% set i = view.intake %}
+<div class="page-header">
+  <h1>{{ i.key }}</h1>
+  {% if view.pending %}<span class="chip warning">{{ view.pending | length | plural('change') }} to review</span>{% endif %}
+</div>
+<p class="intake-summary">{{ i.summary }}</p>
+{% if origin %}
+<div class="banner info"><span class="material-symbols-outlined">move_to_inbox</span>
+  <div>From Leadership Pilot: <strong>{{ origin.title }}</strong> <span class="mono">{{ origin.source_ref }}</span>,
+    raised by {{ origin.stakeholder_list | join(', ') or 'stakeholders' }}.
+    {% if origin.source_url %}<a href="{{ origin.source_url }}" target="_blank" rel="noopener">Open the problem in Leadership Pilot</a>{% endif %}</div></div>
+{% endif %}
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><h3>Stakeholder input</h3>
+      <span class="muted" style="margin-left:auto">{{ i.created_by }} ·
+        {{ i.created_at.strftime('%Y-%m-%d %H:%M') }} UTC</span></div>
+    <div class="card-body source-text">{% for seg in segments %}{% if seg.paths %}<mark title="Quoted by {{ seg.paths | join(', ') }}">{{ seg.text }}</mark>{% else %}{{ seg.text }}{% endif %}{% endfor %}</div>
+    {% if stories %}
+    <div class="card-body" style="border-top:1px solid var(--divider)">
+      <span class="chip trace-traced">{{ coverage.traced }} of {{ stories | length }} stories traced to this input</span>
+      {% if coverage.inferred %}<span class="chip trace-inferred">{{ coverage.inferred }} AI inference</span>{% endif %}
+      {% if coverage.unverified %}<span class="chip trace-unverified">{{ coverage.unverified }} quote not found</span>{% endif %}
+    </div>
+    {% endif %}
+  </div>
+  <div class="card">
+    <div class="card-header"><h3>Backlog items</h3>
+      <span class="chip outlined">{{ i.draft_count | plural('draft') }}</span></div>
+    <ul class="list">
+      {% for e in epics %}
+      <li class="list-item" style="min-height:48px">
+        <span class="material-symbols-outlined muted">flag</span>
+        <div class="text"><div class="{{ 'muted' if e.status == 'Superseded' }}">{{ e.title }}</div></div>
+        <span class="chip">{{ e.status }}</span>
+        <span class="mono muted">{{ e.key }}</span>
+      </li>
+      {% else %}
+      <li class="list-item muted">No backlog items.</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+
+<div id="intake-notes">
+  {% include "partials/intake_notes.html" %}
+</div>
+<div id="redraft-result"></div>
+{% endblock %}

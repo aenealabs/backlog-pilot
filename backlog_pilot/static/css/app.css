@@ -1,0 +1,33 @@
+/* Backlog Pilot: styles for this app's own screens. Loaded after Mission Control's shared
+   suite.css (theme tokens and common components). */
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  .drawer { display: none; }
+  .grid-2 { grid-template-columns: 1fr; }
+  main { padding: 16px; }
+}
+.user-switch select { font: inherit; font-size: 13px; font-weight: 600; color: inherit; background: transparent;
+  border: 0; padding: 4px; cursor: pointer; max-width: 360px; }
+.inbox-actions { display: flex; flex-wrap: wrap; gap: 2px 4px; margin: 4px 0 0 -12px; }
+.inbox-actions > * { flex: none; padding: 0 12px; }
+.drop-reason { display: block; margin: 16px 0 0; font-size: 13px; }
+.drop-reason textarea { display: block; width: 100%; margin-top: 4px; font: inherit; padding: 8px; border: 1px solid var(--divider);
+  border-radius: 4px; background: var(--input-bg); color: var(--text); }
+.reworded { font-size: 12px; cursor: help; }
+.reject-form { display: flex; gap: 4px; align-items: center; }
+.reject-form input { font: inherit; font-size: 13px; padding: 4px 8px; border: 1px solid var(--divider);
+  border-radius: 4px; background: var(--input-bg); color: var(--text); width: 160px; }
+.wsjf-reason { flex: 1 1 220px; min-width: 180px; font: inherit; font-size: 13px; padding: 4px 8px;
+  border: 1px solid var(--divider); border-radius: 4px; background: var(--input-bg); color: var(--text); }
+.inbox-card { border-top: 3px solid var(--primary); }
+
+@media (max-width: 760px) {
+  /* phone: let the app bar wrap instead of widening the page */
+  .shell { grid-template-rows: auto 1fr; }
+  .appbar { flex-wrap: wrap; gap: 8px 12px; padding: 8px 16px; }
+  .appbar .subtitle, .appbar .spacer { display: none; }
+  .user-switch { max-width: 100%; min-width: 0; }
+  .user-switch select { max-width: 220px; text-overflow: ellipsis; }
+  .card table { display: block; overflow-x: auto; }
+  .page-header { flex-wrap: wrap; gap: 8px; }
+}

@@ -1,0 +1,14 @@
+{
+  "question": "Which assumptions were edited or removed, and by whom?",
+  "plan": {
+    "keywords": [],
+    "actor": "",
+    "categories": [
+      "assumptions_and_questions"
+    ],
+    "item_keys": [],
+    "since": null,
+    "until": null,
+    "explanation": "Search all assumption and question events across all dates and actors, so a reviewer can pick out the assumption edits and removals and who made them."
+  }
+}

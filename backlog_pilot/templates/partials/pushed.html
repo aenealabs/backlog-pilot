@@ -1,0 +1,11 @@
+<div class="banner success" style="margin-top:8px">
+  <span class="material-symbols-outlined">check_circle</span>
+  <div>
+    <strong>Pushed {{ keys | length | plural('item') }} ({{ stories | plural('story', 'stories') }}) to {{ tracker_name }}.</strong><br>
+    {% if superseded %}<span>{{ superseded | length | plural('earlier item') }} from {{ intake_key }} marked Superseded.</span><br>{% endif %}
+    {% if external %}<span>{{ synced | plural('item') }} created in {{ external.label }}{% if sync_failed %}; <strong>{{ sync_failed }} pending</strong> (see Backlog to retry){% endif %}.</span><br>{% endif %}
+    {% for k in keys %}<span class="chip" style="margin:4px 4px 0 0">{{ k }}</span>{% endfor %}
+    <div style="margin-top:8px"><a href="/intakes/{{ intake_id }}">Open {{ intake_key }}: assumptions &amp; questions</a> ·
+      <a href="/backlog">View backlog</a> · <a href="/audit">View audit log</a></div>
+  </div>
+</div>

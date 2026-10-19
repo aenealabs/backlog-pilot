@@ -1,0 +1,16 @@
+<div class="history">
+  <div class="overline">Version history</div>
+  <ol class="history-list">
+    {% for v in versions %}
+    <li>
+      <div><strong>v{{ v.version }}</strong> <span class="chip">{{ v.change }}</span>
+        {% if v.material %}<span class="chip warning" title="Could affect the drafted backlog">affects backlog</span>{% endif %}
+        <span class="muted">{{ v.changed_by }} · {{ v.changed_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC</span></div>
+      <div class="{{ 'struck' if v.status == 'removed' }}">{{ v.text }}</div>
+      {% if v.answer %}<div class="muted">Answer: {{ v.answer }}</div>{% endif %}
+      {% if v.reason %}<div class="muted">Reason: {{ v.reason }}</div>{% endif %}
+    </li>
+    {% endfor %}
+  </ol>
+  <button class="button text" onclick="this.closest('.history').remove()">Hide history</button>
+</div>

@@ -1,0 +1,327 @@
+{
+  "input": "After the last two acquisitions we have three part masters, and our design engineers keep creating new part numbers for components we already own. A recent sample found roughly 14% of new fasteners and connectors were near-duplicates of existing parts. That drives up inventory, supplier count, and qualification costs. Engineers need to find an existing part before they create a new one, and data stewards need a way to flag and merge duplicates without breaking released BOMs. Some of the aerospace part data is export controlled, so not everyone can see everything.",
+  "decomposition": {
+    "summary": "After two acquisitions the company runs three part masters, and design engineers keep creating near-duplicate part numbers (about 14% of new fasteners and connectors in a sample), which raises inventory, supplier, and qualification costs. The request has two parts: help engineers find and reuse existing parts before creating new ones, and let data stewards flag and merge duplicates without breaking released BOMs, while respecting export-controlled aerospace data.",
+    "epics": [
+      {
+        "title": "Find and reuse existing parts before creating new ones",
+        "description": "Give design engineers one search across all three part masters, and add a duplicate check to new-part creation. Together these stop near-duplicate part numbers from being created.",
+        "business_outcome": "Reduce the near-duplicate rate of newly created fasteners and connectors from the sampled ~14% baseline, measured by repeating the same sampling method each quarter.",
+        "features": [
+          {
+            "title": "Unified part search across the three part masters",
+            "description": "A single attribute- and classification-based search over all three legacy part masters. Results are filtered by the user's export-control authorization.",
+            "stories": [
+              {
+                "title": "Search all part masters from one place",
+                "as_a": "design engineer",
+                "i_want": "to search parts across all three part masters by classification, key attributes, and description from a single search in PLM",
+                "so_that": "I can find a component we already own before I create a new part number",
+                "acceptance_criteria": [
+                  "Given a part exists only in an acquired company's part master, When I search by its classification and key attributes, Then the part appears in my results with its source master identified",
+                  "Given a search returns parts from several masters, When I view the results, Then each result shows part number, description, classification, lifecycle state, and source master",
+                  "Given I open a search result, When I select it, Then I can insert it into my design or BOM instead of creating a new part"
+                ],
+                "source_quotes": [
+                  "After the last two acquisitions we have three part masters, and our design engineers keep creating new part numbers for components we already own.",
+                  "Engineers need to find an existing part before they create a new one"
+                ],
+                "nfr_categories": []
+              },
+              {
+                "title": "Find near matches by attribute similarity",
+                "as_a": "design engineer",
+                "i_want": "search results to include near matches ranked by how closely their attributes match my criteria, not only exact matches",
+                "so_that": "I can spot an existing fastener or connector that meets my need even when its description is worded differently",
+                "acceptance_criteria": [
+                  "Given a fastener exists with matching thread, length, material, and finish but a different description, When I search with those attributes, Then it appears among the top-ranked results",
+                  "Given results include near matches, When I view them, Then each result shows a similarity indicator and the attributes that differ"
+                ],
+                "source_quotes": [
+                  "A recent sample found roughly 14% of new fasteners and connectors were near-duplicates of existing parts."
+                ],
+                "nfr_categories": []
+              },
+              {
+                "title": "Filter search results by export-control authorization",
+                "as_a": "export compliance officer",
+                "i_want": "search results to show ITAR/EAR-controlled parts only to users authorized for that data",
+                "so_that": "the broader search does not expose controlled aerospace technical data to unauthorized people",
+                "acceptance_criteria": [
+                  "Given a part is classified ITAR or EAR-controlled, When an unauthorized user runs a search that would match it, Then the part, its attributes, and its documents are not shown",
+                  "Given an authorized user runs the same search, When results return, Then the controlled part appears with its export classification marking",
+                  "Given a part from an acquired master has no export classification, When search indexing runs, Then the part is treated as restricted until it is classified and is reported to the export compliance officer"
+                ],
+                "source_quotes": [
+                  "Some of the aerospace part data is export controlled, so not everyone can see everything."
+                ],
+                "nfr_categories": [
+                  "export_control",
+                  "security"
+                ]
+              }
+            ],
+            "wsjf": {
+              "business_value": 13,
+              "time_criticality": 8,
+              "risk_reduction": 13,
+              "job_size": 8,
+              "rationale": "Search is the foundation for stopping new duplicates and directly targets the costs the stakeholder described. Risk reduction is high because it also has to enforce export control across data merged from the acquisitions; the effort is significant because three masters must be indexed."
+            }
+          },
+          {
+            "title": "Duplicate check during new part creation",
+            "description": "When a new part is requested, the system checks for likely duplicates automatically. The engineer must reuse an existing part or justify why a new one is needed.",
+            "stories": [
+              {
+                "title": "Show likely duplicates before creating a part",
+                "as_a": "design engineer",
+                "i_want": "the new-part form to show likely existing matches automatically once I enter the classification and key attributes",
+                "so_that": "I reuse an existing part instead of creating a near-duplicate",
+                "acceptance_criteria": [
+                  "Given I enter the classification and key attributes for a new connector, When I attempt to create it, Then the system displays existing parts above the configured similarity threshold before saving",
+                  "Given a suggested match fits my need, When I select it, Then creation is cancelled and the existing part is used in my context"
+                ],
+                "source_quotes": [
+                  "Engineers need to find an existing part before they create a new one"
+                ],
+                "nfr_categories": [
+                  "data_governance"
+                ]
+              },
+              {
+                "title": "Record a justification when overriding duplicate suggestions",
+                "as_a": "design engineer",
+                "i_want": "to give a reason code and comment when I create a new part despite suggested matches",
+                "so_that": "data stewards can review whether the new part was truly needed",
+                "acceptance_criteria": [
+                  "Given likely duplicates were shown, When I choose to create a new part anyway, Then I must select a reason code and enter a comment before the part is saved",
+                  "Given an override was saved, When a data steward opens the part, Then the reason, the suggested matches, the user, and a timestamp are visible"
+                ],
+                "source_quotes": [],
+                "nfr_categories": [
+                  "auditability",
+                  "data_governance"
+                ]
+              },
+              {
+                "title": "Configure duplicate-check rules per classification",
+                "as_a": "plm administrator",
+                "i_want": "to configure which attributes and which similarity threshold drive the duplicate check for each part classification",
+                "so_that": "the check is accurate for fasteners and connectors first and can be extended to other classes later",
+                "acceptance_criteria": [
+                  "Given I am a plm administrator, When I set matching attributes and a threshold for the fastener classification, Then new fastener requests use those rules",
+                  "Given a rule is changed, When I save it, Then the change is logged with the previous value, the new value, the user, and a timestamp"
+                ],
+                "source_quotes": [],
+                "nfr_categories": [
+                  "auditability"
+                ]
+              }
+            ],
+            "wsjf": {
+              "business_value": 13,
+              "time_criticality": 8,
+              "risk_reduction": 8,
+              "job_size": 5,
+              "rationale": "Stopping duplicates at the point of creation gives high value for moderate effort once search exists. The override audit trail adds governance value."
+            }
+          }
+        ]
+      },
+      {
+        "title": "Clean up existing duplicate parts without disrupting released BOMs",
+        "description": "Give data stewards the tools to flag, review, and merge duplicate parts across the three masters. Released BOMs and the SAP integration must stay intact, and every merge is auditable.",
+        "business_outcome": "Reduce the number of active duplicate part numbers, and with them inventory, supplier count, and qualification costs, while causing zero broken released BOMs.",
+        "features": [
+          {
+            "title": "Duplicate flagging and review queue",
+            "description": "Stewards and engineers can flag suspected duplicates. Batch detection fills a review queue that the stewards work through.",
+            "stories": [
+              {
+                "title": "Flag a suspected duplicate",
+                "as_a": "engineering data steward",
+                "i_want": "to flag two or more parts as suspected duplicates and route them to a review queue",
+                "so_that": "duplicates are tracked and resolved instead of left in the masters",
+                "acceptance_criteria": [
+                  "Given I select two parts, When I flag them as suspected duplicates, Then a review item is created linking both parts with my comment",
+                  "Given a part is flagged, When anyone opens it, Then a duplicate-review indicator is visible"
+                ],
+                "source_quotes": [
+                  "data stewards need a way to flag and merge duplicates without breaking released BOMs"
+                ],
+                "nfr_categories": [
+                  "data_governance"
+                ]
+              },
+              {
+                "title": "Run batch duplicate detection across masters",
+                "as_a": "engineering data steward",
+                "i_want": "to run a scheduled similarity scan of fasteners and connectors across all three part masters",
+                "so_that": "I get a prioritized list of existing duplicate candidates to review",
+                "acceptance_criteria": [
+                  "Given the scan runs, When it completes, Then candidate pairs above the threshold are added to the review queue with a similarity score and their source masters",
+                  "Given a candidate pair was previously rejected as not a duplicate, When the scan runs again, Then that pair is not re-queued"
+                ],
+                "source_quotes": [
+                  "After the last two acquisitions we have three part masters",
+                  "A recent sample found roughly 14% of new fasteners and connectors were near-duplicates of existing parts."
+                ],
+                "nfr_categories": [
+                  "data_governance"
+                ]
+              },
+              {
+                "title": "Restrict duplicate reviews involving export-controlled parts",
+                "as_a": "export compliance officer",
+                "i_want": "review items that involve ITAR/EAR-controlled parts to be visible only to authorized stewards",
+                "so_that": "the duplicate cleanup does not leak controlled data",
+                "acceptance_criteria": [
+                  "Given a candidate pair includes a controlled part, When an unauthorized steward views the queue, Then that item is not shown",
+                  "Given an authorized steward opens such an item, When it displays, Then the export classification of each part is shown"
+                ],
+                "source_quotes": [
+                  "Some of the aerospace part data is export controlled, so not everyone can see everything."
+                ],
+                "nfr_categories": [
+                  "export_control",
+                  "security"
+                ]
+              }
+            ],
+            "wsjf": {
+              "business_value": 8,
+              "time_criticality": 5,
+              "risk_reduction": 8,
+              "job_size": 5,
+              "rationale": "Flagging and the review queue are a prerequisite for merging and give stewards immediate visibility of duplicates. The effort is moderate because the similarity logic from the search feature is reused."
+            }
+          },
+          {
+            "title": "Safe merge of duplicate parts",
+            "description": "Merge a duplicate into a surviving part using supersession, so that released BOMs stay valid and SAP stays consistent. Every merge is fully auditable.",
+            "stories": [
+              {
+                "title": "Merge duplicates by supersession without changing released BOMs",
+                "as_a": "engineering data steward",
+                "i_want": "to merge a duplicate part into a surviving part by marking the duplicate as superseded rather than deleting it",
+                "so_that": "released BOMs remain valid while new usage moves to the surviving part",
+                "acceptance_criteria": [
+                  "Given a duplicate part is used in released BOMs, When I merge it into the surviving part, Then the released BOM revisions remain unchanged and still resolve",
+                  "Given the merge is complete, When an engineer tries to add the superseded part to a new design, Then the system blocks it and proposes the surviving part",
+                  "Given I start a merge, When it is evaluated, Then I see an impact report listing every BOM, assembly, and document that uses the duplicate"
+                ],
+                "source_quotes": [
+                  "data stewards need a way to flag and merge duplicates without breaking released BOMs"
+                ],
+                "nfr_categories": [
+                  "data_governance"
+                ]
+              },
+              {
+                "title": "Prevent merges that would lower export classification",
+                "as_a": "export compliance officer",
+                "i_want": "the system to block, or route to me for approval, any merge between parts with different export classifications",
+                "so_that": "controlled data is never relabeled into a less restrictive part",
+                "acceptance_criteria": [
+                  "Given the two parts have different ITAR/EAR classifications, When a steward submits the merge, Then it is held for export compliance approval",
+                  "Given I approve the merge, When it completes, Then the surviving part carries the more restrictive classification"
+                ],
+                "source_quotes": [
+                  "Some of the aerospace part data is export controlled, so not everyone can see everything."
+                ],
+                "nfr_categories": [
+                  "export_control",
+                  "security"
+                ]
+              },
+              {
+                "title": "Synchronize merges to SAP",
+                "as_a": "plm administrator",
+                "i_want": "merge and supersession results to be sent to SAP material master with confirmation and error handling",
+                "so_that": "ERP inventory and purchasing move to the surviving part and stay consistent with PLM",
+                "acceptance_criteria": [
+                  "Given a merge is completed in PLM, When the integration runs, Then SAP receives the supersession relationship and returns a confirmation",
+                  "Given SAP rejects the message, When the failure occurs, Then the merge is flagged as out of sync and the administrator is alerted with the error details"
+                ],
+                "source_quotes": [
+                  "That drives up inventory, supplier count, and qualification costs."
+                ],
+                "nfr_categories": [
+                  "integration_reliability"
+                ]
+              },
+              {
+                "title": "Keep an audit trail of every merge",
+                "as_a": "engineering data steward",
+                "i_want": "every flag, merge decision, and approval to be recorded with user, timestamp, and reason",
+                "so_that": "merges can be audited and investigated later",
+                "acceptance_criteria": [
+                  "Given a merge is executed, When I view the history of either part, Then I see who merged it, when, why, and who approved it",
+                  "Given audit records exist, When anyone tries to edit or delete them, Then the system prevents it"
+                ],
+                "source_quotes": [],
+                "nfr_categories": [
+                  "auditability"
+                ]
+              }
+            ],
+            "wsjf": {
+              "business_value": 13,
+              "time_criticality": 5,
+              "risk_reduction": 13,
+              "job_size": 13,
+              "rationale": "Merging is what actually reduces the duplicate cost base, and risk reduction is high because of BOM integrity, export control, and SAP consistency. It is the largest job in the backlog because of the impact analysis and the ERP integration."
+            }
+          },
+          {
+            "title": "Duplicate reduction reporting",
+            "description": "A dashboard of duplicate creation and merge metrics by business unit and part class.",
+            "stories": [
+              {
+                "title": "Track duplicate rate and cleanup progress",
+                "as_a": "engineering manager",
+                "i_want": "a dashboard showing the near-duplicate creation rate, override reasons, and merges completed by business unit and classification",
+                "so_that": "I can see whether part reuse is improving against the 14% baseline",
+                "acceptance_criteria": [
+                  "Given duplicate checks and merges have occurred, When I open the dashboard, Then I see the monthly duplicate-override rate and the merge count by business unit and classification",
+                  "Given I lack export authorization, When I view the dashboard, Then aggregate counts are shown but controlled part details are hidden"
+                ],
+                "source_quotes": [
+                  "A recent sample found roughly 14% of new fasteners and connectors were near-duplicates of existing parts."
+                ],
+                "nfr_categories": [
+                  "export_control"
+                ]
+              }
+            ],
+            "wsjf": {
+              "business_value": 5,
+              "time_criticality": 2,
+              "risk_reduction": 2,
+              "job_size": 3,
+              "rationale": "Reporting proves the outcome is being achieved but does not reduce duplicates on its own, so it ranks lowest. It is a small job built on data the other features already capture."
+            }
+          }
+        ]
+      }
+    ],
+    "assumptions": [
+      "The three part masters stay as separate systems for now, and search covers all of them rather than migrating everything into one master first.",
+      "Fasteners and connectors are the first classifications in scope because the sample measured them; other classes follow.",
+      "Merging uses supersession (the duplicate is marked as replaced), not deletion, and released BOM revisions are never edited directly.",
+      "Each part's export classification (ITAR/EAR) is already stored or can be stored as an attribute in PLM, and user authorizations are available for enforcement.",
+      "SAP ERP is the system of record for material master downstream and must reflect supersessions."
+    ],
+    "open_questions": [
+      "Should the three part masters eventually be consolidated into one PLM part master, and if so, on what timeline?",
+      "Should the duplicate check block part creation, or only warn the engineer and require a justification?",
+      "Which part number survives a merge: the oldest, the most used, or one chosen by the steward?",
+      "Should parts in released BOMs be replaced with the surviving part through a formal ECO, or only in new designs going forward?",
+      "Who is authorized to view export-controlled parts, and are acquired-company users covered by existing licenses or technology control plans?",
+      "How should parts from the acquired masters that have no export classification be handled during search and merge?",
+      "What reduction target should replace the ~14% duplicate rate, and by when?"
+    ],
+    "proposed_personas": []
+  }
+}

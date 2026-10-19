@@ -1,0 +1,33 @@
+<li class="note {{ 'is-removed' if n.status == 'removed' }}" id="note-{{ n.id }}">
+  <div class="note-main">
+    <div class="note-text">{{ n.text }}</div>
+    {% if n.kind == 'question' %}
+      {% if n.answer %}
+      <div class="note-answer"><span class="material-symbols-outlined">reply</span>{{ n.answer }}</div>
+      {% elif n.status != 'removed' %}
+      <div class="note-meta"><span class="chip outlined">Open</span></div>
+      {% endif %}
+    {% endif %}
+    <div class="note-meta">v{{ n.version }} · {{ n.updated_by }} · {{ n.updated_at.strftime('%Y-%m-%d %H:%M') }} UTC</div>
+    <div id="history-{{ n.id }}"></div>
+  </div>
+  <div class="note-actions">
+    {% if n.status == 'removed' %}
+    <button class="icon-button" title="Restore" aria-label="Restore"
+            hx-post="/notes/{{ n.id }}/restore" hx-target="#intake-notes"
+            hx-prompt="Reason for restoring (optional, logged)">
+      <span class="material-symbols-outlined">restore_from_trash</span></button>
+    {% else %}
+    <button class="icon-button" title="{{ 'Edit or answer' if n.kind == 'question' else 'Edit' }}" aria-label="Edit"
+            hx-get="/notes/{{ n.id }}/edit" hx-target="#note-{{ n.id }}" hx-swap="outerHTML">
+      <span class="material-symbols-outlined">{{ 'rate_review' if n.kind == 'question' else 'edit' }}</span></button>
+    <button class="icon-button" title="Remove" aria-label="Remove"
+            hx-post="/notes/{{ n.id }}/remove" hx-target="#intake-notes"
+            hx-prompt="Reason for removing (optional, logged)">
+      <span class="material-symbols-outlined">delete</span></button>
+    {% endif %}
+    <button class="icon-button" title="Version history" aria-label="Version history"
+            hx-get="/notes/{{ n.id }}/history" hx-target="#history-{{ n.id }}">
+      <span class="material-symbols-outlined">history</span></button>
+  </div>
+</li>

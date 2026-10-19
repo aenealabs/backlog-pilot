@@ -1,0 +1,12 @@
+{
+  "question": "What did Riley Adams do?",
+  "plan": {
+    "keywords": [],
+    "actor": "Riley Adams",
+    "categories": [],
+    "item_keys": [],
+    "since": null,
+    "until": null,
+    "explanation": "Search all audit events across every category and date where the actor is Riley Adams."
+  }
+}

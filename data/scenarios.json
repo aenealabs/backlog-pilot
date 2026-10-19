@@ -1,0 +1,32 @@
+{
+  "scenarios": [
+    {
+      "id": "eco-cycle-time",
+      "title": "ECO approvals are too slow",
+      "from": "Director of Engineering, Electrical (fictional)",
+      "icon": "published_with_changes",
+      "text": "Our engineering change orders are taking an average of 19 business days from submission to release in PLM, and the target is 7. Engineers tell me they have no idea where a change is stuck, approvers get flooded with notification emails and miss the ones that matter, and about a third of ECOs get rejected for missing information like the affected-parts list or the cost impact. When a change finally releases, manufacturing sometimes doesn't see the updated BOM in SAP for another two days. I need visibility into where changes are stuck, fewer rejections, and the BOM to reach the plants the same day."
+    },
+    {
+      "id": "duplicate-parts",
+      "title": "Duplicate parts across acquired businesses",
+      "from": "VP, Product Engineering Operations (fictional)",
+      "icon": "content_copy",
+      "text": "After the last two acquisitions we have three part masters, and our design engineers keep creating new part numbers for components we already own. A recent sample found roughly 14% of new fasteners and connectors were near-duplicates of existing parts. That drives up inventory, supplier count, and qualification costs. Engineers need to find an existing part before they create a new one, and data stewards need a way to flag and merge duplicates without breaking released BOMs. Some of the aerospace part data is export controlled, so not everyone can see everything."
+    },
+    {
+      "id": "legacy-cad-vault",
+      "title": "Retire the legacy CAD vault",
+      "from": "Engineering IT Manager (fictional)",
+      "icon": "dns",
+      "text": "We still run a legacy CAD data vault for one business unit. It is on unsupported software, it failed its last cybersecurity review, and the vendor contract ends in 11 months. About 400 engineers use it daily and there are roughly 2 million files, including revision history we must keep for regulatory reasons. We want to move everything into the enterprise PLM platform without stopping engineering work, and we cannot lose revision history or file relationships between assemblies and drawings."
+    },
+    {
+      "id": "supplier-change-notice",
+      "title": "Suppliers build to old revisions",
+      "from": "Director of Supplier Quality (fictional)",
+      "icon": "local_shipping",
+      "text": "Our supplier quality engineers find out about engineering changes too late. When we revise a drawing for a purchased part, suppliers often keep building to the old revision for weeks, and two field escapes this year were traced back to that. Today a buyer emails the supplier a PDF, and nobody confirms the supplier received it or updated their PPAP. I need suppliers to get the released drawing and change notice automatically, acknowledge it in a supplier portal, and resubmit PPAP when the change affects form, fit, or function. Supplier quality and purchasing need to see which suppliers have not acknowledged and which open purchase orders are affected. Some of these drawings are export controlled, so each supplier must only see what they are licensed to receive."
+    }
+  ]
+}

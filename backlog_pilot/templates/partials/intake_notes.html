@@ -1,0 +1,58 @@
+{% set i = view.intake %}
+{% if message %}
+<div class="banner error" role="alert"><span class="material-symbols-outlined">error</span><div>{{ message }}</div></div>
+{% endif %}
+
+{% if view.pending %}
+<div class="banner warning">
+  <span class="material-symbols-outlined">published_with_changes</span>
+  <div style="flex:1">
+    <strong>{{ view.pending | length | plural('change') }} since the backlog was drafted may affect it.</strong>
+    <ul class="pending-list">
+      {% for v, n in view.pending %}
+      <li><span class="chip">{{ n.kind }} {{ v.change }}</span> {{ v.text }}{% if v.change == 'answered' and v.answer %}
+        → <em>{{ v.answer }}</em>{% endif %} <span class="muted">· {{ v.changed_by }}</span></li>
+      {% endfor %}
+    </ul>
+    <div class="actions" style="justify-content:flex-start">
+      <button class="button contained" hx-post="/intakes/{{ i.id }}/redraft" hx-target="#redraft-result"
+              hx-indicator="#redraft-progress" hx-disabled-elt="this">
+        <span class="material-symbols-outlined">auto_awesome</span>Re-draft with updates</button>
+      <button class="button outlined" hx-post="/intakes/{{ i.id }}/acknowledge" hx-target="#intake-notes"
+              hx-prompt="Why does the backlog not need to change? (optional, logged)">
+        <span class="material-symbols-outlined">done</span>No backlog change needed</button>
+    </div>
+    <div id="redraft-progress" class="progress" style="margin-top:8px"></div>
+  </div>
+</div>
+{% endif %}
+
+<div class="grid-2 notes">
+  {% for kind, title in [('assumption', 'Assumptions'), ('question', 'Questions for the stakeholder')] %}
+  <div class="card">
+    <div class="card-header"><h3>{{ title }}</h3>
+      <span class="chip outlined">{{ view.notes[kind] | length }}</span></div>
+    <ul class="list">
+      {% for n in view.notes[kind] %}
+        {% include "partials/note_row.html" %}
+      {% else %}
+      <li class="list-item muted">None yet.</li>
+      {% endfor %}
+    </ul>
+    <form class="note-add-form" hx-post="/intakes/{{ i.id }}/notes" hx-target="#intake-notes">
+      <input type="hidden" name="kind" value="{{ kind }}">
+      <input type="text" name="text" placeholder="Add {{ 'an assumption' if kind == 'assumption' else 'a question' }}…"
+             aria-label="New {{ kind }}" required>
+      <button class="button text" type="submit"><span class="material-symbols-outlined">add</span>Add</button>
+    </form>
+    {% if view.removed[kind] %}
+    <details class="removed">
+      <summary>Removed ({{ view.removed[kind] | length }})</summary>
+      <ul class="list">
+        {% for n in view.removed[kind] %}{% include "partials/note_row.html" %}{% endfor %}
+      </ul>
+    </details>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>

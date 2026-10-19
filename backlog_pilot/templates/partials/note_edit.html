@@ -1,0 +1,24 @@
+<li class="note editing" id="note-{{ note.id }}">
+  <form class="note-edit-form" hx-post="/notes/{{ note.id }}/edit" hx-target="#intake-notes">
+    <div class="field">
+      <label for="text-{{ note.id }}">{{ 'Question' if note.kind == 'question' else 'Assumption' }}</label>
+      <textarea id="text-{{ note.id }}" name="text" rows="2" required autofocus>{{ note.text }}</textarea>
+    </div>
+    {% if note.kind == 'question' %}
+    <div class="field">
+      <label for="answer-{{ note.id }}">Stakeholder answer <span class="muted">(answering may affect the backlog)</span></label>
+      <textarea id="answer-{{ note.id }}" name="answer" rows="2"
+                placeholder="Leave blank while the question is open">{{ note.answer }}</textarea>
+    </div>
+    {% endif %}
+    <div class="field">
+      <label for="reason-{{ note.id }}">Reason for the change <span class="muted">(optional, kept in history)</span></label>
+      <input id="reason-{{ note.id }}" type="text" name="reason">
+    </div>
+    <div class="actions">
+      <button type="button" class="button text" hx-get="/intakes/{{ note.intake_id }}/notes"
+              hx-target="#intake-notes">Cancel</button>
+      <button type="submit" class="button contained">Save version {{ note.version + 1 }}</button>
+    </div>
+  </form>
+</li>

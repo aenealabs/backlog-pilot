@@ -1,0 +1,214 @@
+{% macro overlap_list(path) %}
+{% if overlaps.get(path) %}
+<div class="overlap-list">
+  {% for m in overlaps[path] %}
+  <label class="overlap {{ 'likely' if m.likely }}" title="Text similarity {{ m.percent }}%. Untick if it is not related.">
+    <input type="checkbox" name="related:{{ path }}:{{ m.key }}" checked>
+    <span class="material-symbols-outlined">join_inner</span>
+    <span>{{ 'Likely duplicate of' if m.likely else 'Possible overlap with' }}
+      <strong>{{ m.key }}</strong> {{ m.title }} <span class="muted">· {{ m.status }} · {{ m.percent }}% similar · link as related</span></span>
+  </label>
+  {% endfor %}
+</div>
+{% endif %}
+{% endmacro %}
+<form hx-post="/approve" hx-target="#result" hx-swap="innerHTML"
+      hx-disabled-elt="find button[type=submit]">
+  <input type="hidden" name="payload" value="{{ payload }}">
+  <input type="hidden" name="source_text" value="{{ source_text }}">
+  {% if inbox_id %}<input type="hidden" name="inbox_id" value="{{ inbox_id }}">{% endif %}
+  {% if intake %}<input type="hidden" name="intake_id" value="{{ intake.id }}">{% endif %}
+
+  <div class="page-header" style="margin-top:8px">
+    <h2>{{ 'Re-draft of ' ~ intake.key if intake else 'Draft for review' }}</h2>
+    <span class="chip outlined">{{ draft.epics | length | plural('epic') }} · {{ draft.story_count() | plural('story', 'stories') }}</span>
+    <span class="chip trace-traced">{{ coverage.traced }} traced to input</span>
+    {% if coverage.inferred %}<span class="chip trace-inferred">{{ coverage.inferred }} AI inference</span>{% endif %}
+    {% if coverage.unverified %}<span class="chip trace-unverified">{{ coverage.unverified }} quote not found</span>{% endif %}
+  </div>
+  <div class="banner info">
+    <span class="material-symbols-outlined">info</span>
+    <div><strong>{{ draft.summary }}</strong><br>
+      <span class="muted">AI-drafted. Edit titles, untick anything you don't want, and adjust the
+      assumptions and questions, then approve. Nothing reaches the tracker until you do.
+      {% if intake %}Approving replaces the current backlog items for {{ intake.key }}; they are
+      kept and marked Superseded.{% endif %}</span></div>
+  </div>
+
+  <div class="card source-panel">
+    <div class="card-header"><h3>{{ 'Re-draft input' if intake else 'Stakeholder input' }}</h3>
+      <span class="muted" style="margin-left:auto">Highlighted text is quoted by a story. Click a story's source to find it.</span></div>
+    <div class="card-body source-text">{% for seg in segments %}{% if seg.paths %}<mark data-paths="{{ seg.paths | join(' ') }}">{{ seg.text }}</mark>{% else %}{{ seg.text }}{% endif %}{% endfor %}</div>
+  </div>
+
+  <div class="card quality-panel">
+    <div class="card-header"><h3>Quality checks</h3>
+      <span class="chip {{ 'trace-traced' if ready == draft.story_count() else 'trace-unverified' }}">{{ ready }} of {{ draft.story_count() }} stories ready</span>
+      {% if overlaps %}<span class="chip trace-unverified"><span class="material-symbols-outlined">join_inner</span>{{ overlaps | length | plural('item') }} may overlap existing work</span>{% endif %}
+      <span class="muted" style="margin-left:auto">Rule-based checks; they advise and never block approval.</span></div>
+    <div class="card-body">
+      <div class="overline">Non-functional coverage</div>
+      <div class="nfr-row">
+        {% for c in nfr if c.mentioned or c.covered %}
+        <span class="chip {{ 'trace-unverified' if c.gap else 'trace-traced' }}"
+              title="{{ 'The input implies this need but no story covers it' if c.gap else ('Covered by at least one story' if c.mentioned else 'Covered, though the input did not mention it') }}">
+          <span class="material-symbols-outlined">{{ 'warning' if c.gap else 'check' }}</span>{{ c.label }}{{ ' · gap' if c.gap }}</span>
+        {% else %}
+        <span class="muted">The input implies no specific non-functional needs.</span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  {% for epic in draft.epics %}{% set ei = loop.index0 %}
+  <div class="card epic">
+    <div class="card-header">
+      <span class="chip primary">Epic</span>
+      <input class="inline" type="text" name="title:{{ ei }}" value="{{ epic.title }}"
+             aria-label="Epic title" style="font-size:16px">
+      <label class="product-pick" title="Suggested from the epic's text; confirm or change">
+        <span class="material-symbols-outlined">apps</span>
+        <select name="product:{{ ei }}" aria-label="Product for this epic">
+          <option value="">No product</option>
+          {% for p in products %}<option value="{{ p.key }}" {{ 'selected' if suggested_products.get(ei) == p.key }}>{{ p.name }}</option>{% endfor %}
+        </select>
+      </label>
+    </div>
+    <div class="card-body">
+      <p style="margin-top:0">{{ epic.description }}</p>
+      <p class="muted"><span class="material-symbols-outlined" style="font-size:18px">flag</span>
+        Outcome: {{ epic.business_outcome }}</p>
+
+      {% for feature in epic.features %}{% set fi = loop.index0 %}
+      <div class="feature">
+        <div class="feature-header">
+          <span class="chip">Feature</span>
+          <input class="inline" type="text" name="title:{{ ei }}.{{ fi }}"
+                 value="{{ feature.title }}" aria-label="Feature title">
+        </div>
+        {% set w = feature.wsjf %}
+        <div class="wsjf-editor" title="{{ w.rationale if w else 'Not scored' }}">
+          <span class="overline">WSJF</span>
+          {% for part, label in [('business_value', 'Value'), ('time_criticality', 'Time'), ('risk_reduction', 'Risk/Opp'), ('job_size', 'Size')] %}
+          {% if loop.last %}<span class="wsjf-op">÷</span>{% elif not loop.first %}<span class="wsjf-op">+</span>{% endif %}
+          <label class="wsjf-part">{{ label }}
+            <select name="wsjf:{{ ei }}.{{ fi }}:{{ part }}" data-part="{{ part }}" data-ai="{{ w[part] if w else '' }}">
+              {% if not w %}<option value="">–</option>{% endif %}
+              {% for n in wsjf_scale %}<option value="{{ n }}" {{ 'selected' if w and w[part] == n }}>{{ n }}</option>{% endfor %}
+            </select></label>
+          {% endfor %}
+          <span class="wsjf-op">=</span>
+          <span class="wsjf-score" data-ai="{{ w.score if w else '' }}">{{ w.score if w else '–' }}</span>
+          <span class="wsjf-adjusted muted" hidden>adjusted (AI: {{ w.score if w else '–' }})</span>
+          {% if w %}<input class="wsjf-reason" name="wsjf_reason:{{ ei }}.{{ fi }}" hidden placeholder="Why change the AI's score?" aria-label="Why you changed the AI's WSJF score">{% endif %}
+        </div>
+        {% if w %}<div class="muted wsjf-rationale">{{ w.rationale }}</div>{% endif %}
+        {{ overlap_list(ei ~ '.' ~ fi) }}
+        <div class="muted" style="padding:8px 12px 4px">{{ feature.description }}</div>
+        {% for story in feature.stories %}{% set path = ei ~ '.' ~ fi ~ '.' ~ loop.index0 %}
+        <div class="story">
+          <input type="checkbox" name="keep:{{ path }}" checked aria-label="Keep story">
+          <div>
+            <input class="inline" type="text" name="title:{{ path }}" value="{{ story.title }}"
+                   aria-label="Story title">
+            {% set t = traces[path] %}{% set persona = story.as_a | lower | trim %}
+            <div class="story-chips">
+              {% if t.status == 'traced' %}
+              <button type="button" class="chip trace-traced trace-jump" data-path="{{ path }}"
+                      title="{{ t.quotes | map('first') | join(' | ') }}">
+                <span class="material-symbols-outlined">format_quote</span>Traced to input</button>
+              {% elif t.status == 'unverified' %}
+              <span class="chip trace-unverified" title="The model's quote does not appear in the input: {{ t.quotes | map('first') | join(' | ') }}">
+                <span class="material-symbols-outlined">report</span>Quote not found</span>
+              {% else %}
+              <span class="chip trace-inferred" title="No stakeholder words support this story; the AI added it on its own judgment.">
+                <span class="material-symbols-outlined">psychology</span>AI inference</span>
+              {% endif %}
+              {% set story_issues = issues[path] %}{% set warns = story_issues | selectattr('level', 'equalto', 'warn') | list %}
+              {% if warns %}<span class="chip trace-unverified"><span class="material-symbols-outlined">rule</span>{{ warns | length | plural('check') }} to fix</span>
+              {% else %}<span class="chip trace-traced"><span class="material-symbols-outlined">verified</span>Ready</span>{% endif %}
+              {% for c in story.nfr_categories %}<span class="chip outlined">{{ c | replace('_', ' ') }}</span>{% endfor %}
+              {% if persona in known_personas %}
+              <span class="chip outlined" title="Approved persona"><span class="material-symbols-outlined">person</span>{{ persona }}</span>
+              {% elif persona in proposed_personas %}
+              <span class="chip trace-inferred" title="New persona proposed below"><span class="material-symbols-outlined">person_add</span>{{ persona }} · proposed</span>
+              {% else %}
+              <span class="chip trace-unverified" title="Not in the persona library"><span class="material-symbols-outlined">person_alert</span>{{ persona }} · not in library</span>
+              {% endif %}
+            </div>
+            <div class="statement">As a <strong>{{ story.as_a }}</strong>, I want {{ story.i_want }},
+              so that {{ story.so_that }}.</div>
+            {{ overlap_list(path) }}
+            {% if story_issues | rejectattr('code', 'in', ['persona', 'inferred']) | list %}
+            <ul class="issue-list">
+              {% for i in story_issues if i.code not in ('persona', 'inferred') %}
+              <li class="issue-{{ i.level }}"><span class="material-symbols-outlined">{{ 'error' if i.level == 'warn' else 'info' }}</span>{{ i.message }}</li>
+              {% endfor %}
+            </ul>
+            {% endif %}
+            <details>
+              <summary>Acceptance criteria ({{ story.acceptance_criteria | length }})</summary>
+              <ul>{% for ac in story.acceptance_criteria %}<li>{{ ac }}</li>{% endfor %}</ul>
+            </details>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+
+  <div class="grid-2 notes">
+    {% for kind, title, items in [('assumption', 'Assumptions', draft.assumptions),
+                                  ('question', 'Questions for the stakeholder', draft.open_questions)] %}
+    <div class="card">
+      <div class="card-header"><h3>{{ title }}</h3>
+        <span class="chip outlined">{{ items | length }}</span></div>
+      <div class="card-body note-edit-list">
+        {% for text in items %}
+        <div class="note-row">
+          <textarea name="{{ kind }}:{{ loop.index0 }}" rows="1"
+                    aria-label="{{ kind | capitalize }} {{ loop.index }}">{{ text }}</textarea>
+          <button type="button" class="icon-button note-remove" aria-label="Remove {{ kind }}" title="Remove">
+            <span class="material-symbols-outlined">close</span></button>
+        </div>
+        {% endfor %}
+        <button type="button" class="button text note-add" data-name="{{ kind }}:new"
+                data-label="New {{ kind }}">
+          <span class="material-symbols-outlined">add</span>Add {{ kind }}</button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if draft.proposed_personas %}
+  <div class="card">
+    <div class="card-header"><h3>New personas proposed</h3>
+      <span class="muted" style="margin-left:auto">Ticked personas join the library when you approve.</span></div>
+    <ul class="list">
+      {% for p in draft.proposed_personas %}
+      <li class="list-item">
+        <input type="checkbox" name="persona:{{ loop.index0 }}" checked aria-label="Accept persona {{ p.name }}">
+        <span class="avatar"><span class="material-symbols-outlined">person_add</span></span>
+        <div class="text">
+          <div class="primary">{{ p.name | lower }}</div>
+          <div class="secondary">{{ p.description }}</div>
+          <div class="secondary"><strong>Goals:</strong> {{ p.goals | join('; ') }} · <strong>Pain points:</strong> {{ p.pain_points | join('; ') }}</div>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <label class="drop-reason">Why you dropped items <span class="muted">(needed if you untick or remove anything the AI drafted)</span>
+    <textarea name="drop_reason" rows="2" placeholder="e.g. the SAP stories are already covered by BP-104"></textarea></label>
+  <div class="actions">
+    <button type="button" class="button text" onclick="document.getElementById('result').innerHTML=''">Discard</button>
+    {% if not user.approver %}<span class="muted" style="align-self:center">Only approvers can approve. Switch to a product owner or engineering lead.</span>{% endif %}
+    <button type="submit" class="button contained success" {{ 'disabled' if not user.approver }}>
+      <span class="material-symbols-outlined">task_alt</span>Approve &amp; push to {{ tracker_name }}
+    </button>
+  </div>
+</form>

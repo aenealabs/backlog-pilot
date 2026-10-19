@@ -1,0 +1,16 @@
+<div class="history">
+  <div class="overline">Version history</div>
+  <ol class="history-list">
+    {% for v in versions %}
+    <li>
+      <div><strong>v{{ v.version }}</strong> <span class="chip">{{ v.change }}</span>
+        <span class="muted">{{ v.changed_by }} · {{ v.changed_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC</span></div>
+      <div><strong>{{ v.name }}</strong>: {{ v.description }}</div>
+      {% if v.goal_list %}<div class="muted">Goals: {{ v.goal_list | join('; ') }}</div>{% endif %}
+      {% if v.pain_list %}<div class="muted">Pain points: {{ v.pain_list | join('; ') }}</div>{% endif %}
+      {% if v.reason %}<div class="muted">Reason: {{ v.reason }}</div>{% endif %}
+    </li>
+    {% endfor %}
+  </ol>
+  <button class="button text" onclick="this.closest('.history').remove()">Hide history</button>
+</div>

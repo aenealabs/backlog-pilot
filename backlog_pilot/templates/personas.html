@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% macro persona_form(action, p=None, submit='Add persona') %}
+<form method="post" action="{{ action }}" class="persona-form">
+  <div class="field"><label>Name</label>
+    <input type="text" name="name" value="{{ p.name if p else '' }}" placeholder="e.g. supplier quality engineer" required></div>
+  <div class="field"><label>Description</label>
+    <textarea name="description" rows="2" required placeholder="Who they are and what they do">{{ p.description if p else '' }}</textarea></div>
+  <div class="grid-2" style="gap:12px">
+    <div class="field"><label>Goals <span class="muted">(one per line)</span></label>
+      <textarea name="goals" rows="3">{{ p.goal_list | join('\n') if p else '' }}</textarea></div>
+    <div class="field"><label>Pain points <span class="muted">(one per line)</span></label>
+      <textarea name="pain_points" rows="3">{{ p.pain_list | join('\n') if p else '' }}</textarea></div>
+  </div>
+  {% if p %}<div class="field"><label>Reason for the change <span class="muted">(optional, kept in history)</span></label>
+    <input type="text" name="reason"></div>{% endif %}
+  <div class="actions">
+    {% if p %}<a class="button text" href="/personas">Cancel</a>{% endif %}
+    <button type="submit" class="button contained">{{ submit }}</button>
+  </div>
+</form>
+{% endmacro %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Personas</h1>
+  <span class="muted">Every draft uses these personas; new ones are proposed for approval.</span>
+</div>
+{% if message %}<div class="banner error" role="alert"><span class="material-symbols-outlined">error</span><div>{{ message }}</div></div>{% endif %}
+
+<div class="persona-grid">
+  {% for p in personas %}
+  <div class="card persona {{ 'is-retired' if p.status == 'retired' }}">
+    {% if edit_id == p.id %}
+    <div class="card-header"><h3>Edit persona</h3><span class="chip outlined">saves v{{ p.version + 1 }}</span></div>
+    <div class="card-body">{{ persona_form('/personas/' ~ p.id ~ '/edit', p, 'Save version ' ~ (p.version + 1)) }}</div>
+    {% else %}
+    <div class="card-header">
+      <span class="avatar"><span class="material-symbols-outlined">person</span></span>
+      <div style="flex:1;min-width:0">
+        <h3>{{ p.name }}</h3>
+        <div class="muted" style="font-size:12px">v{{ p.version }} · {{ p.updated_by }}</div>
+      </div>
+      {% if p.status == 'proposed' %}<span class="chip trace-inferred" title="Proposed by {{ p.updated_by }}">Proposed</span>
+      {% elif p.status == 'retired' %}<span class="chip">Retired</span>
+      {% else %}<span class="chip outlined" title="Live stories using this persona">{{ usage.get(p.name, 0) | plural('story', 'stories') }}</span>{% endif %}
+    </div>
+    <div class="card-body">
+      <p style="margin-top:0">{{ p.description }}</p>
+      {% if p.goal_list %}<div class="overline">Goals</div>
+      <ul class="tight">{% for g in p.goal_list %}<li>{{ g }}</li>{% endfor %}</ul>{% endif %}
+      {% if p.pain_list %}<div class="overline">Pain points</div>
+      <ul class="tight">{% for g in p.pain_list %}<li>{{ g }}</li>{% endfor %}</ul>{% endif %}
+      <div id="persona-history-{{ p.id }}"></div>
+    </div>
+    <div class="persona-actions">
+      {% if p.status != 'retired' %}
+      <a class="button text" href="/personas?edit={{ p.id }}"><span class="material-symbols-outlined">edit</span>Edit</a>
+      {% endif %}
+      <button class="button text" hx-get="/personas/{{ p.id }}/history" hx-target="#persona-history-{{ p.id }}">
+        <span class="material-symbols-outlined">history</span>History</button>
+      {% if p.status == 'proposed' %}
+      <form method="post" action="/personas/{{ p.id }}/status" class="reject-form" style="margin-left:auto">
+        <input type="hidden" name="status" value="rejected">
+        <input type="text" name="reason" required placeholder="Why reject it?" aria-label="Why reject this proposed persona">
+        <button class="button text" type="submit">Reject</button></form>
+      <form method="post" action="/personas/{{ p.id }}/status">
+        <input type="hidden" name="status" value="approved">
+        <button class="button contained" type="submit">Approve</button></form>
+      {% else %}
+      <form method="post" action="/personas/{{ p.id }}/status" style="margin-left:auto">
+        <input type="hidden" name="status" value="{{ 'approved' if p.status == 'retired' else 'retired' }}">
+        <button class="button text" type="submit">{{ 'Restore' if p.status == 'retired' else 'Retire' }}</button>
+      </form>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+
+  <div class="card">
+    <div class="card-header"><span class="avatar"><span class="material-symbols-outlined">person_add</span></span><h3>Add a persona</h3></div>
+    <div class="card-body">{{ persona_form('/personas') }}</div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+  <h1>Priorities</h1>
+  <span class="muted">Live features ranked by WSJF = (value + time criticality + risk reduction) ÷ job size.</span>
+</div>
+<div class="product-tabs">
+  <a class="product-tab {{ 'active' if not selected }}" href="/priorities">All products</a>
+  {% for p in products %}<a class="product-tab {{ 'active' if selected and selected.id == p.id }}" href="/priorities?product={{ p.key }}">{{ p.name }}</a>{% endfor %}
+</div>
+{% if message %}<div class="banner error" role="alert"><span class="material-symbols-outlined">error</span><div>{{ message }}</div></div>{% endif %}
+
+<div class="card">
+  <table class="priorities">
+    <thead><tr>
+      <th>#</th><th>Feature</th><th title="Business value">Value</th><th title="Time criticality">Time</th>
+      <th title="Risk reduction / opportunity enablement">Risk/Opp</th><th title="Job size">Size</th>
+      <th>WSJF</th><th>Last scored by</th><th></th>
+    </tr></thead>
+    <tbody>
+    {% for r in rows %}{% set f = r.item %}{% set w = r.wsjf %}
+      {% if edit == f.key %}
+      <tr class="editing"><td colspan="9">
+        <form method="post" action="/features/{{ f.key }}/wsjf" class="wsjf-editor wsjf-form">
+          <strong>{{ f.title }}</strong>
+          {% for part, label in [('business_value', 'Value'), ('time_criticality', 'Time'), ('risk_reduction', 'Risk/Opp'), ('job_size', 'Size')] %}
+          {% if loop.last %}<span class="wsjf-op">÷</span>{% elif not loop.first %}<span class="wsjf-op">+</span>{% endif %}
+          <label class="wsjf-part">{{ label }}
+            <select name="{{ part }}" data-part="{{ part }}" required>
+              {% if not w %}<option value="">–</option>{% endif %}
+              {% for n in wsjf_scale %}<option value="{{ n }}" {{ 'selected' if w and w[part] == n }}>{{ n }}</option>{% endfor %}
+            </select></label>
+          {% endfor %}
+          <span class="wsjf-op">=</span><span class="wsjf-score" data-ai="">{{ r.score if r.score is not none else '–' }}</span>
+          <input type="text" name="reason" placeholder="{{ 'Why change the score? (kept in history)' if w else 'Reason (optional, kept in history)' }}" aria-label="Reason" {{ 'required' if w }}>
+          <a class="button text" href="/priorities{{ '?product=' ~ selected.key if selected }}">Cancel</a>
+          <button class="button contained" type="submit">Save</button>
+        </form>
+      </td></tr>
+      {% else %}
+      <tr>
+        <td class="rank">{{ loop.index if r.score is not none else '' }}</td>
+        <td>
+          <div class="primary">{{ f.title }} <span class="mono muted">{{ f.key }}</span></div>
+          <div class="muted" style="font-size:12px">{{ product_names.get(f.product_id, 'No product') }} · {{ r.epic.title if r.epic else '' }}</div>
+          {% if w and w.rationale %}<div class="muted wsjf-rationale">{{ w.rationale }}</div>{% endif %}
+        </td>
+        {% for part in wsjf_parts %}<td class="num">{{ w[part] if w else '–' }}</td>{% endfor %}
+        <td class="num"><span class="chip {{ 'primary' if r.score is not none else 'outlined' }}">{{ r.score if r.score is not none else 'Not scored' }}</span>
+          {% if r.ai and r.last and r.last.change != 'drafted' %}<div class="muted" style="font-size:11px">AI: {{ r.ai.score }}</div>{% endif %}</td>
+        <td class="muted" style="font-size:12px">{% if r.last %}{{ r.last.by }}<br>{{ r.last.change }}{% if r.last.reason %} · {{ r.last.reason }}{% endif %}{% else %}–{% endif %}</td>
+        <td><a class="button text" href="/priorities?edit={{ f.key }}{{ '&product=' ~ selected.key if selected }}">{{ 'Re-score' if w else 'Score' }}</a></td>
+      </tr>
+      {% endif %}
+    {% else %}
+      <tr><td colspan="9" class="muted">No features yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

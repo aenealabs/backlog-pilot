@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+  <h1>Portfolio roadmap</h1>
+  <span class="muted">Every product's epics by quarter, with capacity use. Click a product for its features.</span>
+</div>
+
+<div class="card">
+  <div class="timeline portfolio" style="--cols: {{ quarters | length }}">
+    <div class="tl-head tl-label">Product / epic</div>
+    {% for q in quarters %}<div class="tl-head">{{ q | quarter }}{% if loop.first %} <span class="chip outlined">now</span>{% endif %}</div>{% endfor %}
+    {% for row in rows %}{% set plan = row.plan %}{% set p = row.product %}
+    <a class="tl-label tl-product" href="/roadmap?product={{ p.key }}"><span class="material-symbols-outlined">apps</span>{{ p.name }}</a>
+    {% for q in quarters %}{% set used, cap = plan.used[q], plan.capacity[q] %}
+    <div class="tl-cap {{ 'over' if used > cap }}" title="{{ used }} of {{ cap }} points">
+      <div class="meter"><span style="width: {{ [100, (used / cap * 100) if cap else 100] | min }}%"></span></div>
+      <span>{{ used }}/{{ cap }}</span>
+    </div>
+    {% endfor %}
+    {% for epic in plan.epic_spans() %}
+    <div class="tl-label tl-epic indent">{{ epic.title }}</div>
+    <div class="tl-epic-bar" style="grid-column: {{ epic.start + 2 }} / {{ epic.end + 3 }}">{{ epic.features | length | plural('feature') }}</div>
+    {% else %}
+    <div class="tl-empty">Nothing planned{% if plan.unscored %} ({{ plan.unscored | length }} unscored){% endif %}.</div>
+    {% endfor %}
+    {% if plan.unplanned %}<div class="tl-label tl-epic indent muted">{{ plan.unplanned | length | plural('feature') }} unplanned (over capacity)</div><div class="tl-spacer"></div>{% endif %}
+    {% endfor %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3>Recent roadmap changes</h3></div>
+  {% if changes %}
+  <table>
+    <thead><tr><th>When (UTC)</th><th>Product</th><th>Feature</th><th>Move</th><th>Cause</th><th>By</th></tr></thead>
+    <tbody>{% for c in changes %}
+      <tr><td class="mono">{{ c.changed_at.strftime('%Y-%m-%d %H:%M') }}</td><td>{{ product_names[c.product_id] }}</td>
+        <td>{{ c.feature_title }} <span class="mono muted">{{ c.feature_key }}</span></td>
+        <td>{{ c.from_quarter | slot }} → {{ c.to_quarter | slot }}</td>
+        <td>{{ c.cause }}</td><td>{{ c.changed_by }}</td></tr>{% endfor %}</tbody>
+  </table>
+  {% else %}<div class="empty" style="padding:24px"><p>No roadmap changes yet.</p></div>{% endif %}
+</div>
+{% endblock %}
